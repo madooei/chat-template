@@ -1,0 +1,7 @@
+# Ignore artifacts:
+build
+coverage
+node_modules
+dist
+pnpm-lock.yaml
+public/pdf.worker.min.mjs
