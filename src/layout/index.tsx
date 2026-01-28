@@ -22,8 +22,6 @@ const Layout: React.FC<LayoutProps> = ({
   rightPanelContent,
   className,
 }) => {
-
-
   return (
     <div
       className={cn(

@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 
 interface TooltipButtonProps
-  extends React.ComponentProps<"button">,
-    VariantProps<typeof buttonVariants> {
+  extends React.ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   tooltipContent: React.ReactNode;
   asChild?: boolean;
 }

@@ -1,9 +1,8 @@
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BotMessageSquareIcon } from 'lucide-react';
+import { BotMessageSquareIcon } from "lucide-react";
 
 const DEBUG = false;
-
 
 const Header: React.FC = () => {
   return (
