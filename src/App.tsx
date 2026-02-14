@@ -1,9 +1,16 @@
 import { useEffect } from "react";
+import { useStore } from "@nanostores/react";
 import Layout from "@/layout";
 import { useTheme } from "@/hooks/use-theme";
+import { $router } from "@/chats/store/router";
+import ListChatsPage from "@/chats/pages/list-chats-page";
+import AddChatPage from "@/chats/pages/add-chat-page";
+import EditChatPage from "@/chats/pages/edit-chat-page";
+import MessagesPage from "@/messages/pages/messages-page";
 
 function App() {
   const { theme } = useTheme();
+  const page = useStore($router);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -21,17 +28,31 @@ function App() {
     root.classList.add(theme);
   }, [theme]);
 
-  const { left, middle, right } = {
-    left: <>Hello left!</>,
-    middle: <>Hello middle!</>,
-    right: <>Hello right!</>,
-  };
+  const activeChatId =
+    page?.route === "editChat" || page?.route === "messages"
+      ? page.params.id
+      : undefined;
+
+  let middle: React.ReactNode;
+  if (page?.route === "addChat") {
+    middle = <AddChatPage />;
+  } else if (page?.route === "messages") {
+    middle = <MessagesPage chatId={page.params.id} />;
+  } else if (page?.route === "editChat") {
+    middle = <EditChatPage chatId={page.params.id} />;
+  } else {
+    middle = (
+      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+        Select a chat or create a new one.
+      </div>
+    );
+  }
 
   return (
     <Layout
-      leftPanelContent={left}
+      leftPanelContent={<ListChatsPage activeChatId={activeChatId} />}
       middlePanelContent={middle}
-      rightPanelContent={right}
+      rightPanelContent={null}
       className={"h-screen"}
     />
   );
