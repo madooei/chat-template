@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { $router } from "@/app/router";
 import { useQueryChat } from "@/chats/hooks/use-query-chat";
 import { useQueryMessages } from "@/messages/hooks/use-query-messages";
-import { useMutationMessages } from "@/messages/hooks/use-mutation-messages";
-import { removeMessage } from "@/messages/store/message";
+import { useChat } from "@/messages/hooks/use-chat";
 import MessageList from "@/messages/components/message-list";
 import MessageInput from "@/messages/components/message-input";
 
@@ -15,14 +14,10 @@ interface MessagesPageProps {
 const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   const { data: chat } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
-  const { add: createMessage } = useMutationMessages();
+  const { sendMessage, isStreaming, streamingContent, abort } = useChat(chatId);
 
-  const handleSend = async (content: string, role: "user" | "assistant") => {
-    await createMessage({ chatId, role, content });
-  };
-
-  const handleDelete = (messageId: string) => {
-    removeMessage(messageId);
+  const handleSend = (content: string) => {
+    sendMessage(content);
   };
 
   if (!chat) {
@@ -44,10 +39,19 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
         </Button>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <MessageList messages={messages} onDelete={handleDelete} />
+        <MessageList
+          messages={messages}
+          streamingContent={streamingContent}
+          isStreaming={isStreaming}
+        />
       </div>
       <div className="flex-none">
-        <MessageInput onSend={handleSend} />
+        <MessageInput
+          onSend={handleSend}
+          disabled={isStreaming}
+          isStreaming={isStreaming}
+          onAbort={abort}
+        />
       </div>
     </div>
   );

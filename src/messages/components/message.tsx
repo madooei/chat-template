@@ -3,10 +3,9 @@ import type { MessageType } from "@/messages/types/message";
 
 interface MessageProps {
   message: MessageType;
-  onDelete?: (messageId: string) => void;
 }
 
-const Message: React.FC<MessageProps> = ({ message, onDelete }) => {
+const Message: React.FC<MessageProps> = ({ message }) => {
   const isUser = message.role === "user";
 
   return (
@@ -20,17 +19,6 @@ const Message: React.FC<MessageProps> = ({ message, onDelete }) => {
         )}
       >
         <p>{message.content}</p>
-        {onDelete && (
-          <button
-            onClick={() => onDelete(message._id)}
-            className={cn(
-              "text-xs mt-1 underline opacity-60 hover:opacity-100",
-              isUser ? "text-primary-foreground" : "text-secondary-foreground",
-            )}
-          >
-            delete
-          </button>
-        )}
       </div>
     </div>
   );

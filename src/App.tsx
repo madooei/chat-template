@@ -7,6 +7,7 @@ import ListChatsPage from "@/chats/pages/list-chats-page";
 import AddChatPage from "@/chats/pages/add-chat-page";
 import EditChatPage from "@/chats/pages/edit-chat-page";
 import MessagesPage from "@/messages/pages/messages-page";
+import SettingsPage from "@/settings/pages/settings-page";
 
 function App() {
   const { theme } = useTheme();
@@ -34,7 +35,9 @@ function App() {
       : undefined;
 
   let middle: React.ReactNode;
-  if (page?.route === "addChat") {
+  if (page?.route === "settings") {
+    middle = <SettingsPage />;
+  } else if (page?.route === "addChat") {
     middle = <AddChatPage />;
   } else if (page?.route === "messages") {
     middle = <MessagesPage chatId={page.params.id} />;
