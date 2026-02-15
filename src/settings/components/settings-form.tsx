@@ -28,9 +28,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6 max-w-lg">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="ghost" size="icon" onClick={onBack}>
+        <Button type="button" variant="ghost" size="icon" aria-label="Go back" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-lg font-semibold">Settings</h2>
@@ -68,6 +68,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
               type="button"
               variant="ghost"
               size="icon"
+              aria-label={showApiKey ? "Hide API key" : "Show API key"}
               className="absolute right-0 top-0 h-full w-10"
               onClick={() => setShowApiKey(!showApiKey)}
             >

@@ -27,15 +27,15 @@ export function ThemeToggle() {
           tooltipContent="Toggle theme"
         >
           <Sun
-            className={`transition-all duration-150 ease-in-out absolute 
+            className={`h-4 w-4 transition-all duration-150 ease-in-out absolute
               ${isLightTheme ? "rotate-0 scale-100" : "rotate-90 scale-0"}`}
           />
           <Moon
-            className={`transition-all duration-150 ease-in-out absolute 
+            className={`h-4 w-4 transition-all duration-150 ease-in-out absolute
               ${isDarkTheme ? "rotate-0 scale-100" : "rotate-90 scale-0"}`}
           />
           <Computer
-            className={`transition-all duration-150 ease-in-out absolute 
+            className={`h-4 w-4 transition-all duration-150 ease-in-out absolute
               ${isSystemTheme ? "rotate-0 scale-100" : "rotate-90 scale-0"}`}
           />
           <span className="sr-only">Toggle theme</span>

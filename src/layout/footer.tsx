@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
         "border-2 border-yellow-500": DEBUG,
       })}
     >
-      <p className="text-sm text-muted-foreground font-light text-center sm:text-left">
+      <p className="text-xs text-muted-foreground font-light text-center sm:text-left">
         Chat Template - AI-Enabled Software Engineering © Spring 2026
       </p>
     </footer>

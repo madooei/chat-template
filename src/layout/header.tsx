@@ -10,14 +10,15 @@ const Header: React.FC = () => {
   return (
     <header
       className={cn(
-        "flex items-center justify-between gap-1 w-full py-1 border-b",
+        "flex items-center justify-between gap-2 w-full py-2 border-b",
         {
           "border-2 border-green-500": DEBUG,
         },
       )}
     >
-      <BotMessageSquareIcon />
-      <div className="flex items-center gap-1">
+
+      <BotMessageSquareIcon aria-hidden="true" />
+      <div className="flex items-center gap-2">
         <TooltipButton
           variant="ghost"
           size="icon"

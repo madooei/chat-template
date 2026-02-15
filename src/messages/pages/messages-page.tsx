@@ -33,26 +33,25 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Edit chat settings"
           onClick={() => $router.open(`/chats/${chatId}`)}
         >
           <Settings className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-auto">
         <MessageList
           messages={messages}
           streamingContent={streamingContent}
           isStreaming={isStreaming}
         />
       </div>
-      <div className="flex-none">
-        <MessageInput
-          onSend={handleSend}
-          disabled={isStreaming}
-          isStreaming={isStreaming}
-          onAbort={abort}
-        />
-      </div>
+      <MessageInput
+        onSend={handleSend}
+        disabled={isStreaming}
+        isStreaming={isStreaming}
+        onAbort={abort}
+      />
     </div>
   );
 };
