@@ -18,9 +18,9 @@ export function setChats(chats: ChatType[]) {
 }
 
 export function updateChat(updatedChat: ChatType) {
-  const chats = $chats.get().map((chat) =>
-    chat._id === updatedChat._id ? updatedChat : chat,
-  );
+  const chats = $chats
+    .get()
+    .map((chat) => (chat._id === updatedChat._id ? updatedChat : chat));
   $chats.set(chats);
 }
 

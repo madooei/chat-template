@@ -1,6 +1,6 @@
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { $router } from "@/chats/store/router";
+import { $router } from "@/app/router";
 import ChatList from "@/chats/components/chat-list";
 
 interface ListChatsPageProps {

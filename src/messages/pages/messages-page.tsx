@@ -1,6 +1,6 @@
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { $router } from "@/chats/store/router";
+import { $router } from "@/app/router";
 import { useQueryChat } from "@/chats/hooks/use-query-chat";
 import { useQueryMessages } from "@/messages/hooks/use-query-messages";
 import { useMutationMessages } from "@/messages/hooks/use-mutation-messages";

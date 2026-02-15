@@ -1,5 +1,5 @@
 import type { CreateChatType } from "@/chats/types/chat";
-import { $router } from "@/chats/store/router";
+import { $router } from "@/app/router";
 import { useQueryChat } from "@/chats/hooks/use-query-chat";
 import { useMutationChat } from "@/chats/hooks/use-mutation-chat";
 import EditChatForm from "@/chats/components/edit-chat-form";

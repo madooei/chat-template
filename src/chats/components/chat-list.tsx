@@ -1,7 +1,7 @@
 import { useStore } from "@nanostores/react";
 import { cn } from "@/lib/utils";
 import { $chats } from "@/chats/store/chat";
-import { $router } from "@/chats/store/router";
+import { $router } from "@/app/router";
 
 interface ChatListProps {
   activeChatId?: string;

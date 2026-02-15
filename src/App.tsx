@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import Layout from "@/layout";
 import { useTheme } from "@/hooks/use-theme";
-import { $router } from "@/chats/store/router";
+import { $router } from "@/app/router";
 import ListChatsPage from "@/chats/pages/list-chats-page";
 import AddChatPage from "@/chats/pages/add-chat-page";
 import EditChatPage from "@/chats/pages/edit-chat-page";

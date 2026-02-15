@@ -4,7 +4,6 @@ import type { CreateChatType } from "@/chats/types/chat";
 import { addChat } from "../store/chat";
 
 export function useMutationChats() {
-
   const createChat = async (chat: CreateChatType): Promise<string | null> => {
     try {
       const chatId = crypto.randomUUID(); // Simulated chat ID
