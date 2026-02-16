@@ -37,9 +37,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   const { sendMessage, isStreaming, streamingContent, abort } = useChat(chatId);
   const [inputValue, setInputValue] = useState("");
 
-  const handleSend = (content: string) => {
-    sendMessage(content);
-    setInputValue("");
+  const handleSend = async (content: string) => {
+    const accepted = await sendMessage(content);
+    if (accepted) {
+      setInputValue("");
+    }
   };
 
   if (!chat) {

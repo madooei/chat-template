@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
 import React, { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { codeToHtml } from "shiki";
 import { Button } from "@/components/ui/button";
 
 export type CodeBlockProps = {
@@ -58,16 +57,33 @@ function CodeBlockCode({
     theme === "github-dark" ? "bg-[#24292e]" : "bg-[#f6f8fa]";
 
   useEffect(() => {
+    let cancelled = false;
+
     async function highlight() {
       if (!code) {
         setHighlightedHtml("<pre><code></code></pre>");
         return;
       }
 
-      const html = await codeToHtml(code, { lang: language, theme });
-      setHighlightedHtml(html);
+      try {
+        const { codeToHtml } = await import("shiki");
+        const html = await codeToHtml(code, { lang: language, theme });
+        if (!cancelled) {
+          setHighlightedHtml(html);
+        }
+      } catch {
+        // Keep plaintext fallback when syntax highlighting cannot load.
+        if (!cancelled) {
+          setHighlightedHtml(null);
+        }
+      }
     }
-    highlight();
+
+    void highlight();
+
+    return () => {
+      cancelled = true;
+    };
   }, [code, language, theme]);
 
   const classNames = cn(

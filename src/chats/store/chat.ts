@@ -1,12 +1,30 @@
 import { logger } from "@nanostores/logger";
 import { persistentAtom } from "@nanostores/persistent";
-import type { ChatType } from "@/chats/types/chat";
+import { chatSchema, type ChatType } from "@/chats/types/chat";
 
 const DEBUG = false;
 
+function decodeChats(value: string): ChatType[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.reduce<ChatType[]>((acc, item) => {
+      const result = chatSchema.safeParse(item);
+      if (result.success) {
+        acc.push(result.data);
+      }
+      return acc;
+    }, []);
+  } catch {
+    // Fallback to empty list for malformed localStorage values.
+    return [];
+  }
+}
+
 export const $chats = persistentAtom<ChatType[]>("chats", [], {
   encode: JSON.stringify,
-  decode: JSON.parse,
+  decode: decodeChats,
 });
 
 export function addChat(newChat: ChatType) {

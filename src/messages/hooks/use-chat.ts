@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { getSettings } from "@/settings/store/settings";
 import { addMessage } from "@/messages/store/message";
@@ -11,16 +11,33 @@ export function useChat(chatId: string) {
   const [streamingContent, setStreamingContent] = useState("");
   const [error, setError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      // Invalidate any pending callbacks for the current request and cancel it.
+      requestIdRef.current += 1;
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+    };
+  }, []);
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string): Promise<boolean> => {
       const settings = getSettings();
 
       if (!settings.geminiApiKey) {
         toast.error("API key not configured", {
           description: "Add your Gemini API key in Settings",
         });
-        return;
+        return false;
+      }
+
+      // If a previous request is still streaming, stop it before starting a new one.
+      if (abortControllerRef.current) {
+        requestIdRef.current += 1;
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
 
       addMessage({
@@ -40,17 +57,31 @@ export function useChat(chatId: string) {
       setStreamingContent("");
       setError(null);
 
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
+
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      await streamChat({
+      void streamChat({
         apiKey: settings.geminiApiKey,
         messages: history,
         abortSignal: abortController.signal,
         onChunk: (accumulated) => {
+          if (requestIdRef.current !== requestId) return;
           setStreamingContent(accumulated);
         },
         onFinish: (fullText) => {
+          if (requestIdRef.current !== requestId) return;
+
+          const chat = $chats.get().find((c) => c._id === chatId);
+          if (!chat) {
+            setStreamingContent("");
+            setIsStreaming(false);
+            abortControllerRef.current = null;
+            return;
+          }
+
           addMessage({
             _id: crypto.randomUUID(),
             chatId,
@@ -62,8 +93,7 @@ export function useChat(chatId: string) {
           setIsStreaming(false);
           abortControllerRef.current = null;
 
-          const chat = $chats.get().find((c) => c._id === chatId);
-          if (chat && chat.title === "New Chat") {
+          if (chat.title === "New Chat") {
             const allMessages = $messages
               .get()
               .filter((m) => m.chatId === chatId)
@@ -73,13 +103,17 @@ export function useChat(chatId: string) {
               apiKey: settings.geminiApiKey,
               messages: allMessages,
             }).then((title) => {
-              if (title) {
-                updateChat({ ...chat, title });
+              if (requestIdRef.current !== requestId || !title) return;
+
+              const latestChat = $chats.get().find((c) => c._id === chatId);
+              if (latestChat) {
+                updateChat({ ...latestChat, title });
               }
             });
           }
         },
         onError: (err) => {
+          if (requestIdRef.current !== requestId) return;
           setError(err);
           setStreamingContent("");
           setIsStreaming(false);
@@ -89,11 +123,14 @@ export function useChat(chatId: string) {
           });
         },
       });
+
+      return true;
     },
     [chatId],
   );
 
   const abort = useCallback(() => {
+    requestIdRef.current += 1;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setStreamingContent("");

@@ -72,6 +72,10 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
             )}
           </Button>
         </div>
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          Warning: Client-side API keys are subject to XSS attacks. Use this for
+          local development only.
+        </p>
       </div>
 
       <Button type="submit" disabled={!hasChanges}>

@@ -13,18 +13,25 @@ function App() {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-      return;
-    }
+    const applyTheme = () => {
+      const resolvedTheme =
+        theme === "system" ? (mediaQuery.matches ? "dark" : "light") : theme;
 
-    root.classList.add(theme);
+      root.classList.remove("light", "dark");
+      root.classList.add(resolvedTheme);
+      root.style.colorScheme = resolvedTheme;
+    };
+
+    applyTheme();
+
+    if (theme !== "system") return;
+
+    const handleChange = () => applyTheme();
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
   const activeChatId = page?.route === "messages" ? page.params.id : undefined;
@@ -32,7 +39,7 @@ function App() {
   const renderContent = () => {
     switch (page?.route) {
       case "messages":
-        return <MessagesPage chatId={page.params.id} />;
+        return <MessagesPage key={page.params.id} chatId={page.params.id} />;
       default:
         return <HomeEmptyState />;
     }

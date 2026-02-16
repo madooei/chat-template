@@ -11,7 +11,7 @@ import { Paperclip, Mic, Send, Square } from "lucide-react";
 interface MessageInputProps {
   value: string;
   onValueChange: (value: string) => void;
-  onSend: (content: string) => void;
+  onSend: (content: string) => void | Promise<void>;
   isLoading?: boolean;
   onAbort?: () => void;
 }
@@ -26,7 +26,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const handleSubmit = () => {
     const trimmed = value.trim();
     if (!trimmed || isLoading) return;
-    onSend(trimmed);
+    void onSend(trimmed);
   };
 
   return (

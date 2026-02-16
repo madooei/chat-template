@@ -1,12 +1,30 @@
 import { logger } from "@nanostores/logger";
 import { persistentAtom } from "@nanostores/persistent";
-import type { MessageType } from "@/messages/types/message";
+import { messageSchema, type MessageType } from "@/messages/types/message";
 
 const DEBUG = false;
 
+function decodeMessages(value: string): MessageType[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.reduce<MessageType[]>((acc, item) => {
+      const result = messageSchema.safeParse(item);
+      if (result.success) {
+        acc.push(result.data);
+      }
+      return acc;
+    }, []);
+  } catch {
+    // Fallback to empty list for malformed localStorage values.
+    return [];
+  }
+}
+
 export const $messages = persistentAtom<MessageType[]>("messages", [], {
   encode: JSON.stringify,
-  decode: JSON.parse,
+  decode: decodeMessages,
 });
 
 export function addMessage(newMessage: MessageType) {

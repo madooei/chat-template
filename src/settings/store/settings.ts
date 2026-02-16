@@ -1,6 +1,6 @@
 import { logger } from "@nanostores/logger";
 import { persistentAtom } from "@nanostores/persistent";
-import type { SettingsType } from "@/settings/types/settings";
+import { settingsSchema, type SettingsType } from "@/settings/types/settings";
 
 const DEBUG = false;
 
@@ -9,12 +9,26 @@ const defaultSettings: SettingsType = {
   geminiApiKey: "",
 };
 
+function decodeSettings(value: string): SettingsType {
+  try {
+    const parsed = JSON.parse(value);
+    const result = settingsSchema.safeParse(parsed);
+    if (result.success) {
+      return result.data;
+    }
+  } catch {
+    // Fallback to defaults for malformed localStorage values.
+  }
+
+  return defaultSettings;
+}
+
 export const $settings = persistentAtom<SettingsType>(
   "settings",
   defaultSettings,
   {
     encode: JSON.stringify,
-    decode: JSON.parse,
+    decode: decodeSettings,
   },
 );
 
