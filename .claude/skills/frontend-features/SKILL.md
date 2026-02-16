@@ -61,7 +61,7 @@ src/
 ├── types/                # Shared types
 ├── lib/                  # Shared utilities
 ├── config/               # App configuration
-├── layout/               # Layout components (header, footer, shell)
+├── layout/               # Layout components (header, sidebar shell)
 ├── styles/               # Global CSS
 ├── App.tsx               # Root component
 └── main.tsx              # Entry point

@@ -41,7 +41,7 @@ Patterns for creating components and using the UI library.
 | **Shared**  | `src/components/`            | Reusable across features               |
 | **UI**      | `src/components/ui/`         | shadcn/ui primitives                   |
 | **AI UI**   | `src/components/prompt-kit/` | prompt-kit AI chat primitives          |
-| **Layout**  | `src/layout/`                | Page structure (header, footer, shell) |
+| **Layout**  | `src/layout/`                | Page structure (header, sidebar shell) |
 
 ---
 

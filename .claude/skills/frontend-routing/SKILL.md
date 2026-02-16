@@ -45,19 +45,17 @@ import { createRouter } from "@nanostores/router";
 
 export const $router = createRouter({
   home: "/",
-  addChat: "/chats/new",
   messages: "/chats/:id/messages",
-  editChat: "/chats/:id",
 });
 ```
 
-Order matters — more specific routes before less specific ones (e.g., `messages` before `editChat`, since both match `/chats/:id/*`).
+Order matters — more specific routes before less specific ones.
 
 ---
 
 ## Route Resolution
 
-`App.tsx` subscribes to `$router` and renders the appropriate page. Parameters are accessed via `page.params` (always strings):
+`App.tsx` subscribes to `$router` and renders the appropriate page. Parameters are accessed via `page.params` (always strings). The layout uses a `sidebar` + `content` pattern:
 
 ```typescript
 // src/App.tsx
@@ -66,19 +64,23 @@ import { $router } from "@/app/router";
 
 function App() {
   const page = useStore($router);
+  const activeChatId = page?.route === "messages" ? page.params.id : undefined;
 
-  let content: React.ReactNode;
-  if (page?.route === "addChat") {
-    content = <AddChatPage />;
-  } else if (page?.route === "messages") {
-    content = <MessagesPage chatId={page.params.id} />;
-  } else if (page?.route === "editChat") {
-    content = <EditChatPage chatId={page.params.id} />;
-  } else {
-    content = <EmptyState />;
-  }
+  const renderContent = () => {
+    switch (page?.route) {
+      case "messages":
+        return <MessagesPage chatId={page.params.id} />;
+      default:
+        return <HomeEmptyState />;
+    }
+  };
 
-  return <Layout>{content}</Layout>;
+  return (
+    <Layout
+      sidebar={<ListChatsPage activeChatId={activeChatId} />}
+      content={renderContent()}
+    />
+  );
 }
 ```
 
@@ -94,7 +96,6 @@ Navigate with `$router.open()` using URL strings (not route names):
 import { $router } from "@/app/router";
 
 $router.open("/");
-$router.open("/chats/new");
 $router.open(`/chats/${chatId}/messages`);
 ```
 
@@ -108,9 +109,7 @@ Use the current route to derive UI state like active items in a sidebar:
 const page = useStore($router);
 
 const activeChatId =
-  page?.route === "editChat" || page?.route === "messages"
-    ? page.params.id
-    : undefined;
+  page?.route === "messages" ? page.params.id : undefined;
 
 return <ChatList activeChatId={activeChatId} />;
 ```
@@ -130,12 +129,11 @@ return <ChatList activeChatId={activeChatId} />;
 
 2. Create the page component in the appropriate feature's `pages/` directory
 
-3. Add the route resolution in `App.tsx`:
+3. Add a `case` branch in the `renderContent` switch in `App.tsx`:
 
    ```typescript
-   } else if (page?.route === "newRoute") {
-     content = <NewPage param={page.params.param} />;
-   }
+   case "newRoute":
+     return <NewPage param={page.params.param} />;
    ```
 
 4. Update derived state (e.g., `activeChatId`) if the new route should highlight a sidebar item
@@ -147,6 +145,6 @@ return <ChatList activeChatId={activeChatId} />;
 - [ ] Add route to `createRouter` map in `src/app/router.ts`
 - [ ] Place more specific patterns before less specific ones
 - [ ] Create page component in `{feature}/pages/`
-- [ ] Add `else if` branch in `App.tsx` route resolution
+- [ ] Add `case` branch in `App.tsx` `renderContent` switch
 - [ ] Update derived state (e.g., `activeChatId`) if needed
 - [ ] Update navigation calls in related pages
