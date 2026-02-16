@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { getSettings } from "@/settings/store/settings";
 import { addMessage } from "@/messages/store/message";
 import { $messages } from "@/messages/store/message";
-import { streamChat } from "@/lib/ai";
+import { $chats, updateChat } from "@/chats/store/chat";
+import { streamChat, generateChatTitle } from "@/lib/ai";
 
 export function useChat(chatId: string) {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -60,6 +61,23 @@ export function useChat(chatId: string) {
           setStreamingContent("");
           setIsStreaming(false);
           abortControllerRef.current = null;
+
+          const chat = $chats.get().find((c) => c._id === chatId);
+          if (chat && chat.title === "New Chat") {
+            const allMessages = $messages
+              .get()
+              .filter((m) => m.chatId === chatId)
+              .map((m) => ({ role: m.role, content: m.content }));
+
+            generateChatTitle({
+              apiKey: settings.geminiApiKey,
+              messages: allMessages,
+            }).then((title) => {
+              if (title) {
+                updateChat({ ...chat, title });
+              }
+            });
+          }
         },
         onError: (err) => {
           setError(err);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { VisuallyHidden } from "radix-ui";
 import Header from "./header";
 import { SidebarContext } from "./sidebar-context";
 
@@ -33,7 +34,14 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, content, className }) => {
 
             {/* Mobile sidebar via Sheet */}
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-              <SheetContent side="left" className="w-80 p-0">
+              <SheetContent
+                side="left"
+                className="p-0"
+                aria-describedby={undefined}
+              >
+                <VisuallyHidden.Root>
+                  <SheetTitle>Navigation</SheetTitle>
+                </VisuallyHidden.Root>
                 <div className="flex flex-col h-full pt-10">{sidebar}</div>
               </SheetContent>
             </Sheet>

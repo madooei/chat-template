@@ -37,7 +37,7 @@ const AddChatDialog: React.FC<AddChatDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>New Chat</DialogTitle>
         </DialogHeader>

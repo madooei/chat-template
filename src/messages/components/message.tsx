@@ -53,7 +53,7 @@ const Message: React.FC<MessageProps> = ({ message }) => {
 
       <MessageActions
         className={cn(
-          "opacity-0 group-hover:opacity-100 transition-opacity",
+          "opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity",
           !isAssistant && "flex-row-reverse",
         )}
       >
