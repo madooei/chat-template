@@ -1,13 +1,19 @@
-import { PlusCircle } from "lucide-react";
+import { useState } from "react";
+import { ArrowDownUp, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { $router } from "@/app/router";
+import { Input } from "@/components/ui/input";
 import ChatList from "@/chats/components/chat-list";
+import AddChatDialog from "@/chats/components/add-chat-dialog";
 
 interface ListChatsPageProps {
   activeChatId?: string;
 }
 
 const ListChatsPage: React.FC<ListChatsPageProps> = ({ activeChatId }) => {
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-none p-1 md:p-2 lg:p-4">
@@ -16,16 +22,41 @@ const ListChatsPage: React.FC<ListChatsPageProps> = ({ activeChatId }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => $router.open("/chats/new")}
+            onClick={() => setAddDialogOpen(true)}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             New Chat
           </Button>
         </div>
+        <div className="flex items-center gap-2 mt-3">
+          <Input
+            placeholder="Search chats..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() =>
+              setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))
+            }
+            aria-label={
+              sortOrder === "desc" ? "Sort oldest first" : "Sort newest first"
+            }
+          >
+            <ArrowDownUp className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       <div className="flex-1 min-h-0 p-1 md:p-2 lg:p-4 overflow-auto">
-        <ChatList activeChatId={activeChatId} />
+        <ChatList
+          activeChatId={activeChatId}
+          searchQuery={searchQuery}
+          sortOrder={sortOrder}
+        />
       </div>
+      <AddChatDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   );
 };
