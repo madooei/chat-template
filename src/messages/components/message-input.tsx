@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,34 +9,35 @@ import {
 import { Paperclip, Mic, Send, Square } from "lucide-react";
 
 interface MessageInputProps {
+  value: string;
+  onValueChange: (value: string) => void;
   onSend: (content: string) => void;
   isLoading?: boolean;
   onAbort?: () => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
+  value,
+  onValueChange,
   onSend,
   isLoading,
   onAbort,
 }) => {
-  const [content, setContent] = useState("");
-
   const handleSubmit = () => {
-    const trimmed = content.trim();
+    const trimmed = value.trim();
     if (!trimmed || isLoading) return;
     onSend(trimmed);
-    setContent("");
   };
 
   return (
     <div className="p-4 max-w-3xl mx-auto w-full">
       <PromptInput
-        value={content}
-        onValueChange={setContent}
+        value={value}
+        onValueChange={onValueChange}
         isLoading={isLoading}
         onSubmit={handleSubmit}
       >
-        <PromptInputTextarea placeholder="Type a message..." autoFocus />
+        <PromptInputTextarea placeholder="Ask anything..." autoFocus />
         <PromptInputActions className="justify-between px-2 pt-2">
           <div className="flex items-center gap-2">
             <PromptInputAction tooltip="Attach file">
@@ -82,7 +82,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 className="h-8 w-8"
                 aria-label="Send message"
                 onClick={handleSubmit}
-                disabled={!content.trim()}
+                disabled={!value.trim()}
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -90,6 +90,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
           )}
         </PromptInputActions>
       </PromptInput>
+      <p className="text-xs text-muted-foreground text-center pt-2">
+        Enter to send, Shift+Enter for new line
+      </p>
     </div>
   );
 };

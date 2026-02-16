@@ -16,14 +16,14 @@ interface MessageListProps {
   messages: MessageType[];
   streamingContent?: string;
   isStreaming?: boolean;
-  onSendSuggestion?: (content: string) => void;
+  onInsertSuggestion?: (content: string) => void;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
   messages,
   streamingContent,
   isStreaming,
-  onSendSuggestion,
+  onInsertSuggestion,
 }) => {
   const isThinking = isStreaming && !streamingContent;
 
@@ -40,7 +40,7 @@ const MessageList: React.FC<MessageListProps> = ({
           {SUGGESTIONS.map((suggestion) => (
             <PromptSuggestion
               key={suggestion}
-              onClick={() => onSendSuggestion?.(suggestion)}
+              onClick={() => onInsertSuggestion?.(suggestion)}
             >
               {suggestion}
             </PromptSuggestion>

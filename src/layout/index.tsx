@@ -1,100 +1,49 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import Header from "./header";
-import Footer from "./footer";
-
-const DEBUG = false;
+import { SidebarContext } from "./sidebar-context";
 
 interface LayoutProps {
-  leftPanelContent: React.ReactNode;
-  middlePanelContent: React.ReactNode;
-  rightPanelContent: React.ReactNode;
+  sidebar: React.ReactNode;
+  content: React.ReactNode;
   className?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({
-  leftPanelContent,
-  middlePanelContent,
-  rightPanelContent,
-  className,
-}) => {
+const Layout: React.FC<LayoutProps> = ({ sidebar, content, className }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
-    <div
-      className={cn(
-        "flex min-h-screen w-full antialiased scroll-smooth",
-        className,
-        {
-          "border-2 border-red-500": DEBUG,
-        },
-      )}
-    >
+    <SidebarContext.Provider value={{ closeSidebar }}>
       <div
-        className={cn("flex flex-col px-2 w-full", {
-          "border-2 border-purple-500": DEBUG,
-        })}
+        className={cn(
+          "flex min-h-screen w-full antialiased scroll-smooth",
+          className,
+        )}
       >
-        <Header />
-        <ResizablePanelGroup
-          autoSaveId="layout"
-          direction="horizontal"
-          className={cn("flex-1 border-l border-r", {
-            "border-2 border-pink-500 ": DEBUG,
-          })}
-        >
-          {leftPanelContent && (
-            <ResizablePanel
-              className={cn({
-                "border-2 border-blue-500": DEBUG,
-              })}
-              minSize={30}
-              order={1}
-              collapsedSize={0}
-              collapsible={true}
-              id="left-panel"
-            >
-              {leftPanelContent}
-            </ResizablePanel>
-          )}
-          {leftPanelContent && (middlePanelContent || rightPanelContent) && (
-            <ResizableHandle withHandle />
-          )}
-          {middlePanelContent && (
-            <ResizablePanel
-              minSize={30}
-              className={cn({
-                "border-2 border-green-500": DEBUG,
-              })}
-              order={2}
-              id="middle-panel"
-            >
-              {middlePanelContent}
-            </ResizablePanel>
-          )}
-          {(leftPanelContent || middlePanelContent) && rightPanelContent && (
-            <ResizableHandle withHandle />
-          )}
-          {rightPanelContent && (
-            <ResizablePanel
-              minSize={30}
-              className={cn({
-                "border-2 border-yellow-500": DEBUG,
-              })}
-              order={3}
-              collapsedSize={0}
-              collapsible={true}
-              id="right-panel"
-            >
-              {rightPanelContent}
-            </ResizablePanel>
-          )}
-        </ResizablePanelGroup>
-        <Footer />
+        <div className="flex flex-col w-full">
+          <Header onMenuClick={() => setSidebarOpen(true)} />
+          <div className="flex flex-1 min-h-0">
+            {/* Desktop sidebar */}
+            <aside className="hidden md:flex md:w-80 md:flex-col md:border-r">
+              {sidebar}
+            </aside>
+
+            {/* Mobile sidebar via Sheet */}
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetContent side="left" className="w-80 p-0">
+                <div className="flex flex-col h-full pt-10">{sidebar}</div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Main content */}
+            <main className="flex-1 min-w-0">{content}</main>
+          </div>
+        </div>
       </div>
-    </div>
+    </SidebarContext.Provider>
   );
 };
 

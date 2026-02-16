@@ -2,17 +2,14 @@ import { useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import Layout from "@/layout";
 import { useTheme } from "@/hooks/use-theme";
-import { useWindowSize } from "@/hooks/use-window-size";
 import { $router } from "@/app/router";
 import ListChatsPage from "@/chats/pages/list-chats-page";
 import MessagesPage from "@/messages/pages/messages-page";
-import SettingsPage from "@/settings/pages/settings-page";
+import HomeEmptyState from "@/components/home-empty-state";
 
 function App() {
   const { theme } = useTheme();
   const page = useStore($router);
-  const size = useWindowSize();
-  const isSmallScreen = size.width ? size.width <= 720 : false;
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -34,40 +31,18 @@ function App() {
 
   const renderContent = () => {
     switch (page?.route) {
-      case "settings":
-        return {
-          left: isSmallScreen ? null : (
-            <ListChatsPage activeChatId={activeChatId} />
-          ),
-          middle: <SettingsPage />,
-        };
       case "messages":
-        return {
-          left: isSmallScreen ? null : (
-            <ListChatsPage activeChatId={activeChatId} />
-          ),
-          middle: <MessagesPage chatId={page.params.id} />,
-        };
+        return <MessagesPage chatId={page.params.id} />;
       default:
-        return {
-          left: <ListChatsPage activeChatId={activeChatId} />,
-          middle: isSmallScreen ? null : (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Select a chat or create a new one.
-            </div>
-          ),
-        };
+        return <HomeEmptyState />;
     }
   };
 
-  const { left, middle } = renderContent();
-
   return (
     <Layout
-      leftPanelContent={left}
-      middlePanelContent={middle}
-      rightPanelContent={null}
-      className={"h-screen"}
+      sidebar={<ListChatsPage activeChatId={activeChatId} />}
+      content={renderContent()}
+      className="h-screen"
     />
   );
 }

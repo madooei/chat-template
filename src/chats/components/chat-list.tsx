@@ -17,6 +17,7 @@ import { removeChat } from "@/chats/store/chat";
 import { removeMessagesByChatId } from "@/messages/store/message";
 import EditChatDialog from "@/chats/components/edit-chat-dialog";
 import DeleteChatDialog from "@/chats/components/delete-chat-dialog";
+import { useSidebar } from "@/layout/sidebar-context";
 
 interface ChatListProps {
   activeChatId?: string;
@@ -42,6 +43,43 @@ function formatRelativeTime(timestamp: number): string {
   });
 }
 
+function groupByDate(
+  chats: ChatType[],
+): { label: string; chats: ChatType[] }[] {
+  const now = new Date();
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const yesterdayStart = todayStart - 86400000;
+  const weekAgoStart = todayStart - 7 * 86400000;
+
+  const groups: Record<string, ChatType[]> = {
+    Today: [],
+    Yesterday: [],
+    "Previous 7 days": [],
+    Older: [],
+  };
+
+  for (const chat of chats) {
+    const t = chat._creationTime;
+    if (t >= todayStart) {
+      groups["Today"].push(chat);
+    } else if (t >= yesterdayStart) {
+      groups["Yesterday"].push(chat);
+    } else if (t >= weekAgoStart) {
+      groups["Previous 7 days"].push(chat);
+    } else {
+      groups["Older"].push(chat);
+    }
+  }
+
+  return Object.entries(groups)
+    .filter(([, chats]) => chats.length > 0)
+    .map(([label, chats]) => ({ label, chats }));
+}
+
 const ChatList: React.FC<ChatListProps> = ({
   activeChatId,
   searchQuery,
@@ -49,6 +87,7 @@ const ChatList: React.FC<ChatListProps> = ({
 }) => {
   const chats = useStore($chats);
   const [editingChat, setEditingChat] = useState<ChatType | null>(null);
+  const { closeSidebar } = useSidebar();
 
   const handleDelete = (chatId: string) => {
     removeMessagesByChatId(chatId);
@@ -89,65 +128,84 @@ const ChatList: React.FC<ChatListProps> = ({
     );
   }
 
+  const groups = groupByDate(filtered);
+
   return (
     <>
-      <ul className="flex flex-col" role="list">
-        {filtered.map((chat) => {
-          const isActive = chat._id === activeChatId;
+      {groups.map((group) => (
+        <div key={group.label}>
+          <h3 className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            {group.label}
+          </h3>
+          <ul role="list">
+            {group.chats.map((chat) => {
+              const isActive = chat._id === activeChatId;
 
-          return (
-            <li key={chat._id} className="border-b last:border-b-0 group">
-              <button
-                onClick={() => $router.open(`/chats/${chat._id}/messages`)}
-                className={cn(
-                  "w-full text-left px-3 py-3 flex items-start gap-3 transition-colors",
-                  "hover:bg-accent",
-                  isActive && "bg-secondary border-l-2 border-l-primary",
-                )}
-              >
-                <MessageSquare
-                  className={cn(
-                    "h-4 w-4 mt-0.5 flex-shrink-0",
-                    isActive ? "text-primary" : "text-muted-foreground",
-                  )}
-                />
-                <div className="flex-1 min-w-0">
-                  <p
+              return (
+                <li key={chat._id} className="relative group">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      $router.open(`/chats/${chat._id}/messages`);
+                      closeSidebar();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        $router.open(`/chats/${chat._id}/messages`);
+                        closeSidebar();
+                      }
+                    }}
                     className={cn(
-                      "text-sm truncate",
-                      isActive && "font-medium",
+                      "w-full text-left px-3 py-3 pr-20 flex items-start gap-3 transition-colors cursor-pointer",
+                      "hover:bg-accent",
+                      isActive && "bg-secondary border-l-2 border-l-primary",
                     )}
                   >
-                    {chat.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatRelativeTime(chat._creationTime)}
-                  </p>
-                </div>
-                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingChat(chat);
-                          }}
-                          aria-label="Edit chat"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Edit chat</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span onClick={(e) => e.stopPropagation()}>
+                    <MessageSquare
+                      className={cn(
+                        "h-4 w-4 mt-0.5 flex-shrink-0",
+                        isActive ? "text-primary" : "text-muted-foreground",
+                      )}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={cn(
+                          "text-sm truncate",
+                          isActive && "font-medium",
+                        )}
+                      >
+                        {chat.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatRelativeTime(chat._creationTime)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingChat(chat);
+                            }}
+                            aria-label="Edit chat"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Edit chat</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <DeleteChatDialog
                             onDelete={() => handleDelete(chat._id)}
                             trigger={
@@ -161,17 +219,17 @@ const ChatList: React.FC<ChatListProps> = ({
                               </Button>
                             }
                           />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Delete chat</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Delete chat</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
       {editingChat && (
         <EditChatDialog
           chat={editingChat}

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Share } from "lucide-react";
+import { ArrowLeft, ChevronDown, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ import { ScrollButton } from "@/components/prompt-kit/scroll-button";
 import { useQueryChat } from "@/chats/hooks/use-query-chat";
 import { useQueryMessages } from "@/messages/hooks/use-query-messages";
 import { useChat } from "@/messages/hooks/use-chat";
+import { $router } from "@/app/router";
 import MessageList from "@/messages/components/message-list";
 import MessageInput from "@/messages/components/message-input";
 
@@ -33,9 +35,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   const { data: chat } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
   const { sendMessage, isStreaming, streamingContent, abort } = useChat(chatId);
+  const [inputValue, setInputValue] = useState("");
 
   const handleSend = (content: string) => {
     sendMessage(content);
+    setInputValue("");
   };
 
   if (!chat) {
@@ -47,7 +51,18 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b">
-        <h2 className="text-lg font-semibold truncate">{chat.title}</h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-8 w-8 flex-shrink-0"
+            onClick={() => $router.open("/")}
+            aria-label="Back to chats"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-lg font-semibold truncate">{chat.title}</h2>
+        </div>
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -86,13 +101,13 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
           </Button>
         </div>
       </div>
-      <ChatContainerRoot className="relative flex-1">
+      <ChatContainerRoot className="relative flex-1" aria-label="Chat messages">
         <ChatContainerContent className="mx-auto w-full max-w-3xl py-3">
           <MessageList
             messages={messages}
             streamingContent={streamingContent}
             isStreaming={isStreaming}
-            onSendSuggestion={handleSend}
+            onInsertSuggestion={setInputValue}
           />
         </ChatContainerContent>
         <ChatContainerScrollAnchor />
@@ -101,6 +116,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
         </div>
       </ChatContainerRoot>
       <MessageInput
+        value={inputValue}
+        onValueChange={setInputValue}
         onSend={handleSend}
         isLoading={isStreaming}
         onAbort={abort}
