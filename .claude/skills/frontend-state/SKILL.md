@@ -1,6 +1,6 @@
 ---
 name: frontend-state
-description: State management with nanostores. Use when creating a store, using persistentAtom or atom, implementing localStorage persistence, adding computed values, deciding where state should live, or asking about store patterns and naming conventions.
+description: State management with nanostores. Use when creating a store, using persistentAtom or atom, implementing localStorage persistence, safe decoding, validating persisted data, adding computed values, deciding where state should live, or asking about store patterns and naming conventions.
 allowed-tools:
   - Read
   - Write
@@ -64,15 +64,32 @@ src/
 
 ## The Store Pattern
 
-Every entity store follows the same shape — a `persistentAtom` holding an array, plus plain functions to mutate it:
+Every entity store follows the same shape — a `persistentAtom` holding an array, a **safe decoder**, plus plain functions to mutate it:
 
 ```typescript
 import { persistentAtom } from "@nanostores/persistent";
-import type { ChatType } from "@/chats/types/chat";
+import { chatSchema, type ChatType } from "@/chats/types/chat";
+
+function decodeChats(value: string): ChatType[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.reduce<ChatType[]>((acc, item) => {
+      const result = chatSchema.safeParse(item);
+      if (result.success) {
+        acc.push(result.data);
+      }
+      return acc;
+    }, []);
+  } catch {
+    return [];
+  }
+}
 
 export const $chats = persistentAtom<ChatType[]>("chats", [], {
   encode: JSON.stringify,
-  decode: JSON.parse,
+  decode: decodeChats,
 });
 
 export function addChat(newChat: ChatType) {
@@ -96,6 +113,8 @@ export function clearChats() {
 }
 ```
 
+**Never use raw `JSON.parse` as the decode function.** localStorage is user-editable and can become malformed (schema changes, manual edits, corruption). See [Safe Decoding](#safe-decoding) below for all three patterns.
+
 ---
 
 ## The Abstraction Boundary
@@ -114,12 +133,81 @@ The store is the **only place that knows where data comes from**. Everything abo
 
 ---
 
+## Safe Decoding
+
+Every `persistentAtom` needs a custom decode function that validates data with Zod and falls back to defaults on failure. Three patterns depending on the data shape:
+
+### Array Entities
+
+Use `reduce` + `safeParse` to keep valid items and silently drop invalid ones:
+
+```typescript
+function decodeChats(value: string): ChatType[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.reduce<ChatType[]>((acc, item) => {
+      const result = chatSchema.safeParse(item);
+      if (result.success) {
+        acc.push(result.data);
+      }
+      return acc;
+    }, []);
+  } catch {
+    return [];
+  }
+}
+```
+
+### Single Objects
+
+Return the default value on validation failure:
+
+```typescript
+function decodeSettings(value: string): SettingsType {
+  try {
+    const parsed = JSON.parse(value);
+    const result = settingsSchema.safeParse(parsed);
+    if (result.success) {
+      return result.data;
+    }
+  } catch {
+    // Fallback to defaults for malformed localStorage values.
+  }
+
+  return defaultSettings;
+}
+```
+
+### Scalar Values (Enums, Primitives)
+
+Validate manually when a Zod schema is overkill:
+
+```typescript
+function decodeTheme(value: string): Theme {
+  try {
+    const parsed = JSON.parse(value);
+    if (parsed === "dark" || parsed === "light" || parsed === "system") {
+      return parsed;
+    }
+  } catch {
+    // Fallback to default theme for malformed localStorage values.
+  }
+
+  return "system";
+}
+```
+
+---
+
 ## Checklist for New Store
 
 - [ ] Create in `{feature}/store/{entity}.ts`
 - [ ] Use `persistentAtom` for data that should survive refresh
 - [ ] Use `atom` for ephemeral global state
 - [ ] Prefix atom names with `$` (`$chats`, `$messages`)
+- [ ] Write a safe decode function (never use raw `JSON.parse`)
 - [ ] Export plain functions for mutations (`addChat`, `removeChat`)
 - [ ] Components consume stores through hooks, never import stores directly
 

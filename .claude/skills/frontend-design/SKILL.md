@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: UI/UX design guidance for clean, minimal interfaces. Use when designing new UI, reviewing design decisions, implementing layouts, choosing colors or spacing, working with dark mode or CSS variables, adding animations, or asking about Tailwind spacing, visual hierarchy, and accessibility.
+description: UI/UX design guidance for clean, minimal interfaces. Use when designing new UI, reviewing design decisions, implementing layouts, choosing colors or spacing, working with dark mode or CSS variables, adding animations, hardening frontend code for production, fixing race conditions, lazy-loading libraries, or asking about Tailwind spacing, visual hierarchy, accessibility, and robustness patterns.
 allowed-tools:
   - Read
   - Write
@@ -24,10 +24,11 @@ Design philosophy and visual guidelines for this project.
 
 ## Quick Reference
 
-| Topic         | File                                       | Description                    |
-| ------------- | ------------------------------------------ | ------------------------------ |
-| **Reference** | [reference.md](reference.md)               | Visual hierarchy, motion, a11y |
-| **AI Chat**   | [AI-CHAT-PATTERNS.md](AI-CHAT-PATTERNS.md) | AI chat-specific UI patterns   |
+| Topic          | File                                             | Description                                       |
+| -------------- | ------------------------------------------------ | ------------------------------------------------- |
+| **Reference**  | [reference.md](reference.md)                     | Visual hierarchy, motion, a11y                    |
+| **AI Chat**    | [AI-CHAT-PATTERNS.md](AI-CHAT-PATTERNS.md)       | AI chat-specific UI patterns                      |
+| **Robustness** | [ROBUSTNESS-PATTERNS.md](ROBUSTNESS-PATTERNS.md) | Race conditions, lazy loading, dependency hygiene |
 
 ---
 
@@ -141,3 +142,4 @@ Use Tailwind's standard spacing scale consistently. Avoid arbitrary values.
 
 - [reference.md](reference.md) — Visual hierarchy, motion, accessibility, anti-patterns
 - [AI-CHAT-PATTERNS.md](AI-CHAT-PATTERNS.md) — AI chat-specific UI patterns (layout, messages, input, scrolling)
+- [ROBUSTNESS-PATTERNS.md](ROBUSTNESS-PATTERNS.md) — Dependency hygiene, race condition protection, lazy loading, stale closures, key-based remounting, async handler patterns

@@ -73,27 +73,42 @@ Set `DEBUG = true` during development. Set back to `false` before committing.
 // 1. Imports
 import { persistentAtom } from "@nanostores/persistent";
 import { logger } from "@nanostores/logger";
-import type { EntityType } from "../types/entity";
+import { entitySchema, type EntityType } from "../types/entity";
 
 // 2. Debug flag
 const DEBUG = false;
 
-// 3. Atom definition
+// 3. Safe decoder (never use raw JSON.parse)
+function decodeEntities(value: string): EntityType[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.reduce<EntityType[]>((acc, item) => {
+      const result = entitySchema.safeParse(item);
+      if (result.success) acc.push(result.data);
+      return acc;
+    }, []);
+  } catch {
+    return [];
+  }
+}
+
+// 4. Atom definition
 export const $entities = persistentAtom<EntityType[]>("entities", [], {
   encode: JSON.stringify,
-  decode: JSON.parse,
+  decode: decodeEntities,
 });
 
-// 4. CRUD functions
+// 5. CRUD functions
 export function addEntity(entity: EntityType) { ... }
 export function updateEntity(entity: EntityType) { ... }
 export function removeEntity(id: string) { ... }
 export function clearEntities() { ... }
 
-// 5. Feature-specific functions (if any)
+// 6. Feature-specific functions (if any)
 export function removeEntitiesByParentId(parentId: string) { ... }
 
-// 6. Debug logging (last)
+// 7. Debug logging (last)
 if (DEBUG) {
   logger({ $entities });
 }
