@@ -1,94 +1,95 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Send, Square } from "lucide-react";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputActions,
+  PromptInputAction,
+} from "@/components/prompt-kit/prompt-input";
+import { Paperclip, Mic, Send, Square } from "lucide-react";
 
 interface MessageInputProps {
   onSend: (content: string) => void;
-  disabled?: boolean;
-  isStreaming?: boolean;
+  isLoading?: boolean;
   onAbort?: () => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
-  disabled,
-  isStreaming,
+  isLoading,
   onAbort,
 }) => {
   const [content, setContent] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
-
-  // Auto-resize textarea: grows with content up to 1/3 of viewport height
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const adjustHeight = () => {
-      textarea.style.height = "auto";
-      const maxHeight = window.innerHeight / 3;
-      const scrollHeight = Math.min(textarea.scrollHeight, maxHeight);
-      textarea.style.height = `${scrollHeight}px`;
-    };
-
-    adjustHeight();
-
-    window.addEventListener("resize", adjustHeight);
-    return () => window.removeEventListener("resize", adjustHeight);
-  }, [content]);
-
-  const handleSend = () => {
+  const handleSubmit = () => {
     const trimmed = content.trim();
-    if (!trimmed) return;
+    if (!trimmed || isLoading) return;
     onSend(trimmed);
     setContent("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-2 p-4 border-t">
-      <textarea
-        ref={textareaRef}
+    <div className="p-4 max-w-3xl mx-auto w-full">
+      <PromptInput
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type a message..."
-        rows={3}
-        disabled={disabled}
-        className="w-full resize-none overflow-y-auto rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-      />
-      <div className="flex items-center justify-end">
-        {isStreaming ? (
-          <Button
-            type="button"
-            size="icon"
-            variant="destructive"
-            aria-label="Stop generating"
-            onClick={onAbort}
-          >
-            <Square className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="icon"
-            aria-label="Send message"
-            onClick={handleSend}
-            disabled={!content.trim()}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+        onValueChange={setContent}
+        isLoading={isLoading}
+        onSubmit={handleSubmit}
+      >
+        <PromptInputTextarea placeholder="Type a message..." autoFocus />
+        <PromptInputActions className="justify-between px-2 pt-2">
+          <div className="flex items-center gap-2">
+            <PromptInputAction tooltip="Attach file">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Attach file"
+                onClick={() => toast.info("File upload is not implemented yet")}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
+            <PromptInputAction tooltip="Voice input">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Voice input"
+                onClick={() => toast.info("Voice input is not implemented yet")}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
+          </div>
+          {isLoading ? (
+            <PromptInputAction tooltip="Stop generating">
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Stop generating"
+                onClick={onAbort}
+              >
+                <Square className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
+          ) : (
+            <PromptInputAction tooltip="Send message">
+              <Button
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Send message"
+                onClick={handleSubmit}
+                disabled={!content.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
+          )}
+        </PromptInputActions>
+      </PromptInput>
     </div>
   );
 };

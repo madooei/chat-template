@@ -1,7 +1,19 @@
 import { useState } from "react";
-import { BotMessageSquare, Check, Copy, User2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Check,
+  Copy,
+  Pencil,
+  RefreshCw,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Markdown from "@/components/markdown-preview";
+import {
+  MessageAction,
+  MessageActions,
+  MessageContent,
+} from "@/components/prompt-kit/message";
 import { cn } from "@/lib/utils";
 import type { MessageType } from "@/messages/types/message";
 
@@ -21,60 +33,103 @@ const Message: React.FC<MessageProps> = ({ message }) => {
 
   return (
     <div
-      className="flex gap-3 px-4 py-2 group hover:bg-accent/50 transition-colors"
+      className={cn(
+        "group flex flex-col gap-1 px-4 py-3",
+        !isAssistant && "items-end",
+      )}
       role="listitem"
     >
-      <div className="flex-shrink-0">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
-          {isAssistant ? (
-            <BotMessageSquare className="h-5 w-5 text-primary" />
-          ) : (
-            <User2 className="h-5 w-5 text-secondary-foreground" />
-          )}
-        </div>
-      </div>
+      <MessageContent
+        markdown
+        className={cn(
+          "prose prose-neutral prose-sm dark:prose-invert",
+          isAssistant
+            ? "bg-transparent p-0 rounded-none max-w-full sm:max-w-[85%]"
+            : "max-w-full sm:max-w-[80%] px-4",
+        )}
+      >
+        {message.content}
+      </MessageContent>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground text-sm">
-              {isAssistant ? "Assistant" : "You"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {new Date(message._creationTime).toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <MessageActions
+        className={cn(
+          "opacity-0 group-hover:opacity-100 transition-opacity",
+          !isAssistant && "flex-row-reverse",
+        )}
+      >
+        {!isAssistant && (
+          <span className="text-xs text-muted-foreground self-center">
+            {new Date(message._creationTime).toLocaleDateString([], {
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
+        )}
+        <MessageAction tooltip={copied ? "Copied" : "Copy message"}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            aria-label={copied ? "Copied" : "Copy message"}
+            onClick={handleCopy}
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </MessageAction>
+        {isAssistant ? (
+          <>
+            <MessageAction tooltip="Thumbs up">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label="Thumbs up"
+                onClick={() => toast.info("Feedback is not implemented yet")}
+              >
+                <ThumbsUp className="h-3.5 w-3.5" />
+              </Button>
+            </MessageAction>
+            <MessageAction tooltip="Thumbs down">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label="Thumbs down"
+                onClick={() => toast.info("Feedback is not implemented yet")}
+              >
+                <ThumbsDown className="h-3.5 w-3.5" />
+              </Button>
+            </MessageAction>
+            <MessageAction tooltip="Regenerate">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label="Regenerate"
+                onClick={() => toast.info("Regenerate is not implemented yet")}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </MessageAction>
+          </>
+        ) : (
+          <MessageAction tooltip="Edit message">
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-8 w-8 transition-colors", {
-                "text-primary": copied,
-              })}
-              aria-label={copied ? "Copied" : "Copy message"}
-              onClick={handleCopy}
+              className="h-7 w-7"
+              aria-label="Edit message"
+              onClick={() => toast.info("Edit message is not implemented yet")}
             >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
+              <Pencil className="h-3.5 w-3.5" />
             </Button>
-          </div>
-        </div>
-
-        <div className="mt-0.5 text-foreground">
-          {isAssistant ? (
-            <Markdown content={message.content} />
-          ) : (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-          )}
-        </div>
-      </div>
+          </MessageAction>
+        )}
+      </MessageActions>
     </div>
   );
 };
