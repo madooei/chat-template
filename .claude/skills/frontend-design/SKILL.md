@@ -16,6 +16,10 @@ allowed-tools:
 
 Design philosophy and visual guidelines for this project.
 
+## Related Docs
+
+- **[AI-CHAT-PATTERNS.md](./AI-CHAT-PATTERNS.md)** — AI chat-specific UI patterns (layout, messages, input, scrolling, accessibility)
+
 ## Related Skills
 
 - **[frontend-components](../frontend-components/SKILL.md)** — Component patterns and shadcn/ui usage
