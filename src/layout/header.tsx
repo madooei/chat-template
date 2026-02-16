@@ -16,7 +16,6 @@ const Header: React.FC = () => {
         },
       )}
     >
-
       <BotMessageSquareIcon aria-hidden="true" />
       <div className="flex items-center gap-2">
         <TooltipButton

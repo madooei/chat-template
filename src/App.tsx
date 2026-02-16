@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import Layout from "@/layout";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowSize } from "@/hooks/use-window-size";
 import { $router } from "@/app/router";
 import ListChatsPage from "@/chats/pages/list-chats-page";
-import AddChatPage from "@/chats/pages/add-chat-page";
-import EditChatPage from "@/chats/pages/edit-chat-page";
 import MessagesPage from "@/messages/pages/messages-page";
 import SettingsPage from "@/settings/pages/settings-page";
 
@@ -14,13 +12,7 @@ function App() {
   const { theme } = useTheme();
   const page = useStore($router);
   const size = useWindowSize();
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
-
-  useEffect(() => {
-    if (size.width) {
-      setIsSmallScreen(size.width <= 720);
-    }
-  }, [size]);
+  const isSmallScreen = size.width ? size.width <= 720 : false;
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -38,10 +30,7 @@ function App() {
     root.classList.add(theme);
   }, [theme]);
 
-  const activeChatId =
-    page?.route === "editChat" || page?.route === "messages"
-      ? page.params.id
-      : undefined;
+  const activeChatId = page?.route === "messages" ? page.params.id : undefined;
 
   const renderContent = () => {
     switch (page?.route) {
@@ -52,26 +41,12 @@ function App() {
           ),
           middle: <SettingsPage />,
         };
-      case "addChat":
-        return {
-          left: isSmallScreen ? null : (
-            <ListChatsPage activeChatId={activeChatId} />
-          ),
-          middle: <AddChatPage />,
-        };
       case "messages":
         return {
           left: isSmallScreen ? null : (
             <ListChatsPage activeChatId={activeChatId} />
           ),
           middle: <MessagesPage chatId={page.params.id} />,
-        };
-      case "editChat":
-        return {
-          left: isSmallScreen ? null : (
-            <ListChatsPage activeChatId={activeChatId} />
-          ),
-          middle: <EditChatPage chatId={page.params.id} />,
         };
       default:
         return {

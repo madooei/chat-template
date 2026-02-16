@@ -24,13 +24,22 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ displayName: displayName.trim(), geminiApiKey: geminiApiKey.trim() });
+    onSubmit({
+      displayName: displayName.trim(),
+      geminiApiKey: geminiApiKey.trim(),
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6 max-w-lg">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="ghost" size="icon" aria-label="Go back" onClick={onBack}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Go back"
+          onClick={onBack}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-lg font-semibold">Settings</h2>
