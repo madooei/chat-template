@@ -8,6 +8,8 @@ allowed-tools:
   - Grep
   - Glob
   - AskUserQuestion
+  - WebSearch
+  - WebFetch
 ---
 
 # Frontend Design Guide

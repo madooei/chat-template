@@ -8,6 +8,8 @@ allowed-tools:
   - Grep
   - Glob
   - AskUserQuestion
+  - WebSearch
+  - WebFetch
 ---
 
 # Frontend Components Guide
@@ -19,6 +21,7 @@ Patterns for creating components and using the UI library.
 - **[frontend-features](../frontend-features/SKILL.md)** — Feature organization (components live in `{feature}/components/`)
 - **[frontend-hooks](../frontend-hooks/SKILL.md)** — Hooks that components consume
 - **[frontend-design](../frontend-design/SKILL.md)** — Visual design and layout patterns
+- **[frontend-prompt-kit](../frontend-prompt-kit/SKILL.md)** — AI chat UI primitives (message, chat container, markdown, etc.)
 
 ---
 
@@ -32,13 +35,14 @@ Patterns for creating components and using the UI library.
 
 ## Component Location
 
-| Type        | Location                    | Purpose                                |
-| ----------- | --------------------------- | -------------------------------------- |
-| **Feature** | `src/{feature}/components/` | Feature-specific UI                    |
-| **Page**    | `src/{feature}/pages/`      | Route entry points (thin wrappers)     |
-| **Shared**  | `src/components/`           | Reusable across features               |
-| **UI**      | `src/components/ui/`        | shadcn/ui primitives                   |
-| **Layout**  | `src/layout/`               | Page structure (header, footer, shell) |
+| Type        | Location                     | Purpose                                |
+| ----------- | ---------------------------- | -------------------------------------- |
+| **Feature** | `src/{feature}/components/`  | Feature-specific UI                    |
+| **Page**    | `src/{feature}/pages/`       | Route entry points (thin wrappers)     |
+| **Shared**  | `src/components/`            | Reusable across features               |
+| **UI**      | `src/components/ui/`         | shadcn/ui primitives                   |
+| **AI UI**   | `src/components/prompt-kit/` | prompt-kit AI chat primitives          |
+| **Layout**  | `src/layout/`                | Page structure (header, footer, shell) |
 
 ---
 
