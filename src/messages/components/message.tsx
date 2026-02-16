@@ -7,6 +7,7 @@ import {
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
+  Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +83,17 @@ const Message: React.FC<MessageProps> = ({ message }) => {
         </MessageAction>
         {isAssistant ? (
           <>
+            <MessageAction tooltip="Read aloud">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label="Read aloud"
+                onClick={() => toast.info("Read aloud is not implemented yet")}
+              >
+                <Volume2 className="h-3.5 w-3.5" />
+              </Button>
+            </MessageAction>
             <MessageAction tooltip="Thumbs up">
               <Button
                 variant="ghost"
