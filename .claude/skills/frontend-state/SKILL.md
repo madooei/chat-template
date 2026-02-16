@@ -1,20 +1,19 @@
 ---
 name: frontend-state
-description: State management patterns with nanostores. Use when managing global state, implementing localStorage persistence, creating stores for features, or deciding where state should live.
+description: State management with nanostores. Use when creating a store, using persistentAtom or atom, implementing localStorage persistence, adding computed values, deciding where state should live, or asking about store patterns and naming conventions.
 allowed-tools:
   - Read
   - Write
   - Edit
   - Grep
   - Glob
-  - AskUserQuestion
   - WebSearch
   - WebFetch
 ---
 
 # Frontend State Management Guide
 
-Patterns for state management in the frontend codebase using nanostores.
+Patterns for state management using nanostores.
 
 ## Related Skills
 
@@ -26,9 +25,9 @@ Patterns for state management in the frontend codebase using nanostores.
 
 ## Quick Reference
 
-| Topic          | File                           | Description                                |
-| -------------- | ------------------------------ | ------------------------------------------ |
-| **Nanostores** | [nanostores.md](nanostores.md) | Atoms, persistent atoms, actions, useStore |
+| Topic         | File                         | Description                                          |
+| ------------- | ---------------------------- | ---------------------------------------------------- |
+| **Reference** | [reference.md](reference.md) | CRUD table, computed values, debug logging, template |
 
 ---
 
@@ -42,13 +41,13 @@ Patterns for state management in the frontend codebase using nanostores.
 | **Component local state**     | `useState` (React)            | Form inputs, toggles  |
 | **Derived/computed state**    | `computed` (nanostores)       | Filtered list, counts |
 
-**The rule of thumb:** If state needs to survive a page refresh, use `persistentAtom`. If it's global but ephemeral, use `atom`. If it's local to one component, use `useState`.
+If state needs to survive a page refresh, use `persistentAtom`. If it's global but ephemeral, use `atom`. If it's local to one component, use `useState`.
 
 ---
 
 ## State Location
 
-Stores live in their feature's `store/` directory (singular). One file per feature is typical:
+Stores live in their feature's `store/` directory. One file per feature is typical:
 
 ```plaintext
 src/
@@ -97,20 +96,11 @@ export function clearChats() {
 }
 ```
 
-**Why this works:**
-
-- `persistentAtom` automatically syncs to localStorage — no manual load/save
-- Actions are plain functions, not methods on a class — easy to import and test
-- The store key (`"chats"`) is the localStorage key — simple and transparent
-- Hooks wrap these functions to provide React integration (see frontend-hooks skill)
-
 ---
 
 ## The Abstraction Boundary
 
-This is the most important concept in the state layer. The store is the **only place that knows where data comes from**. Right now it's localStorage via `persistentAtom`. In the future, it could be a backend API, a database, or anything else.
-
-Everything above the store — hooks, components, pages — only talks to the store through its exported functions. Swap the store internals, and everything above still works.
+The store is the **only place that knows where data comes from**. Everything above — hooks, components, pages — talks to the store through its exported functions. Swap the store internals and everything above still works.
 
 ```plaintext
 ┌──────────────────────────────────────────────┐
@@ -118,23 +108,9 @@ Everything above the store — hooks, components, pages — only talks to the st
 ├──────────────────────────────────────────────┤
 │  Store ($chats, addChat, removeChat, ...) │  ← The abstraction boundary
 ├──────────────────────────────────────────────┤
-│  persistentAtom → localStorage            │  ← Swappable (Act 2: Convex, etc.)
+│  persistentAtom → localStorage            │  ← Swappable
 └──────────────────────────────────────────────┘
 ```
-
----
-
-## React Context
-
-We don't currently use React Context in this template. Nanostores + `useStore` covers our needs.
-
-Context becomes useful when:
-
-- You need to pass server-fetched data down a component tree without prop drilling
-- You have session-scoped state that should be isolated per subtree
-- You're batching related queries to avoid N+1 problems
-
-If you need Context later, the pattern is: create a context + provider in `lib/`, consume via a custom hook, and compose providers in your page component.
 
 ---
 
@@ -143,12 +119,12 @@ If you need Context later, the pattern is: create a context + provider in `lib/`
 - [ ] Create in `{feature}/store/{entity}.ts`
 - [ ] Use `persistentAtom` for data that should survive refresh
 - [ ] Use `atom` for ephemeral global state
-- [ ] Export the atom with `$` prefix (`$chats`, `$messages`)
+- [ ] Prefix atom names with `$` (`$chats`, `$messages`)
 - [ ] Export plain functions for mutations (`addChat`, `removeChat`)
-- [ ] Add debug logging behind a `DEBUG` flag using `@nanostores/logger`
+- [ ] Components consume stores through hooks, never import stores directly
 
 ---
 
 ## Detailed Documentation
 
-- [nanostores.md](nanostores.md) — Atoms, persistent atoms, actions, computed values, debug logging
+- [reference.md](reference.md) — CRUD function table, plain atom, computed values, debug logging, store file template

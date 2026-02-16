@@ -1,13 +1,12 @@
 ---
 name: frontend-components
-description: Component patterns and UI library usage. Use when creating components, using shadcn/ui, implementing theming, working with forms, using icons, showing toasts, or asking about component organization and patterns.
+description: Component patterns and UI library usage. Use when creating components, using shadcn/ui, implementing theming, working with cn() or Tailwind, using lucide-react icons, showing toasts, working with forms, or asking about component organization and patterns.
 allowed-tools:
   - Read
   - Write
   - Edit
   - Grep
   - Glob
-  - AskUserQuestion
   - WebSearch
   - WebFetch
 ---
@@ -27,9 +26,9 @@ Patterns for creating components and using the UI library.
 
 ## Quick Reference
 
-| Topic        | File                       | Description                        |
-| ------------ | -------------------------- | ---------------------------------- |
-| **Patterns** | [patterns.md](patterns.md) | Common patterns from this codebase |
+| Topic         | File                         | Description                        |
+| ------------- | ---------------------------- | ---------------------------------- |
+| **Reference** | [reference.md](reference.md) | Common patterns from this codebase |
 
 ---
 
@@ -48,7 +47,7 @@ Patterns for creating components and using the UI library.
 
 ## shadcn/ui Components
 
-shadcn/ui components are copy-pasted into `src/components/ui/`. They're your code — you own them and can modify them. Import from `@/components/ui/*`:
+shadcn/ui components are copy-pasted into `src/components/ui/`. They're your code — modify freely. Import from `@/components/ui/*`:
 
 ```typescript
 import { Button } from "@/components/ui/button";
@@ -57,34 +56,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 ```
 
-### Button Variants
+Button variants: `default`, `secondary`, `destructive`, `outline`, `ghost`, `link`. Sizes: `default`, `sm`, `lg`, `icon`.
 
-```tsx
-<Button variant="default">Primary</Button>
-<Button variant="secondary">Secondary</Button>
-<Button variant="destructive">Delete</Button>
-<Button variant="outline">Outline</Button>
-<Button variant="ghost">Ghost</Button>
-<Button variant="link">Link</Button>
-
-// Sizes
-<Button size="default">Default</Button>
-<Button size="sm">Small</Button>
-<Button size="lg">Large</Button>
-<Button size="icon">
-  <Settings className="h-4 w-4" />
-</Button>
-```
-
-To add new shadcn/ui components, use `npx shadcn@latest add <component>`. This downloads the component source into `src/components/ui/`.
+To add new shadcn/ui components: `npx shadcn@latest add <component>`.
 
 ---
 
@@ -102,8 +78,6 @@ import { cn } from "@/lib/utils";
 )}>
 ```
 
-`cn()` uses `clsx` + `tailwind-merge` under the hood. It handles conditional classes and resolves Tailwind conflicts (e.g., `p-4` + `px-2` correctly yields `py-4 px-2`).
-
 ---
 
 ## Icons
@@ -115,7 +89,6 @@ import { Settings, Send, Plus, Trash2, Sun, Moon } from "lucide-react";
 
 <Settings className="h-4 w-4" />
 
-// In a button
 <Button size="icon" variant="ghost">
   <Settings className="h-4 w-4" />
 </Button>
@@ -131,13 +104,12 @@ Use `sonner` for toast notifications. Toasts are typically called from mutation 
 import { toast } from "sonner";
 
 toast.success("Chat created successfully");
-
 toast.error("Error creating chat", {
   description: "Please try again later",
 });
 ```
 
-The `<Toaster>` component is mounted once in `main.tsx` with `richColors` and `position="top-center"`.
+The `<Toaster>` is mounted once in `main.tsx` with `richColors` and `position="top-center"`.
 
 ---
 
@@ -147,27 +119,23 @@ The theme system uses CSS variables + a `dark` class on `<html>`. Three modes: `
 
 ### How It Works
 
-1. **`src/store/theme.ts`** — `persistentAtom` stores the user's choice (`"light"`, `"dark"`, or `"system"`)
+1. **`src/store/theme.ts`** — `persistentAtom` stores the user's choice
 2. **`src/hooks/use-theme.tsx`** — `useTheme()` hook exposes `{ theme, setTheme }`
-3. **`src/App.tsx`** — `useEffect` applies the correct class to `<html>` on theme change
+3. **`src/App.tsx`** — `useEffect` applies the correct class to `<html>`
 4. **`src/styles/index.css`** — CSS variables for `:root` (light) and `.dark` (dark)
 
 ### Theme-Aware Styling
 
-Prefer CSS variables over hardcoded colors. They automatically adapt to light/dark mode:
+Use CSS variables, not hardcoded colors:
 
 ```tsx
-// ✅ Uses CSS variables — adapts to theme
 <div className="bg-background text-foreground">
 <div className="bg-primary text-primary-foreground">
 <div className="bg-secondary text-secondary-foreground">
 <div className="text-muted-foreground">
 
-// ✅ dark: prefix for explicit overrides
+// dark: prefix for explicit overrides
 <div className="bg-white dark:bg-gray-900">
-
-// ❌ Hardcoded colors — breaks in dark mode
-<div className="bg-white text-black">
 ```
 
 ### Key CSS Variables
@@ -185,49 +153,20 @@ Prefer CSS variables over hardcoded colors. They automatically adapt to light/da
 
 ---
 
-## Basic Component Pattern
-
-```typescript
-import { cn } from "@/lib/utils";
-
-interface MyComponentProps {
-  title: string;
-  className?: string;
-  onAction?: () => void;
-}
-
-const MyComponent: React.FC<MyComponentProps> = ({ title, className, onAction }) => {
-  return (
-    <div className={cn("p-4", className)}>
-      <h2>{title}</h2>
-      <Button onClick={onAction}>Action</Button>
-    </div>
-  );
-};
-
-export default MyComponent;
-```
-
-**Conventions:**
-
-- Props defined as an `interface` above the component
-- `className` prop when the component's root element can be styled by parents
-- `cn()` to merge base classes with `className` prop
-- `React.FC<Props>` for typing, `const` declaration with default export for feature components
-
----
-
 ## Checklist for New Components
 
 - [ ] Create in appropriate directory (feature, shared, or layout)
 - [ ] Define typed props interface
-- [ ] Use `cn()` for class merging when accepting `className` prop
+- [ ] Use `React.FC<Props>` with `const` declaration
+- [ ] Accept `className` prop when root element can be styled by parents
+- [ ] Use `cn()` to merge base classes with `className` prop
 - [ ] Use CSS variables (`bg-primary`, `text-muted-foreground`) not hardcoded colors
 - [ ] Use `lucide-react` for icons at `h-4 w-4` standard size
 - [ ] Consume data through hooks, not by importing stores directly
+- [ ] Default export for feature components
 
 ---
 
 ## Detailed Documentation
 
-- [patterns.md](patterns.md) — Common component patterns from this codebase
+- [reference.md](reference.md) — Common component patterns from this codebase (page, form, list, message, input, composite)

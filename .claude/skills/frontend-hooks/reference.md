@@ -1,16 +1,13 @@
 # Hook Patterns
 
-The four hook patterns used in this codebase, with complete real examples.
+The four hook patterns used in this codebase.
 
 ## Pattern 1: Query Collection
 
-Lists all items, or filters by a parent ID. Returns `{ data, loading, error }`.
-
-### Example: `useQueryChats` — list all chats
+Lists all items, or filters by a parent ID.
 
 ```typescript
 // src/chats/hooks/use-query-chats.ts
-
 import type { ChatType } from "@/chats/types/chat";
 import { useStore } from "@nanostores/react";
 import { $chats } from "@/chats/store/chat";
@@ -26,15 +23,10 @@ export function useQueryChats() {
 }
 ```
 
-### Example: `useQueryMessages` — filter messages by chatId
+With filtering by parent ID:
 
 ```typescript
 // src/messages/hooks/use-query-messages.ts
-
-import type { MessageType } from "@/messages/types/message";
-import { useStore } from "@nanostores/react";
-import { $messages } from "@/messages/store/message";
-
 export function useQueryMessages(chatId: string) {
   const messages = useStore($messages);
   const filtered = messages.filter((m) => m.chatId === chatId);
@@ -47,25 +39,14 @@ export function useQueryMessages(chatId: string) {
 }
 ```
 
-**Key points:**
-
-- Takes a parent ID when filtering a child resource (messages belong to a chat)
-- `useStore` subscribes to the atom — component re-renders when data changes
-- `loading` and `error` are always `false` with localStorage, but included for API compatibility
+---
 
 ## Pattern 2: Query Single
 
-Finds one item by ID. Returns `{ data, loading, error }`.
-
-### Example: `useQueryChat` — get one chat
+Finds one item by ID. `data` is `undefined` if the item doesn't exist.
 
 ```typescript
 // src/chats/hooks/use-query-chat.ts
-
-import type { ChatType } from "@/chats/types/chat";
-import { useStore } from "@nanostores/react";
-import { $chats } from "@/chats/store/chat";
-
 export function useQueryChat(chatId: string) {
   const chats = useStore($chats);
   const chat = chats.find((c) => c._id === chatId);
@@ -78,20 +59,14 @@ export function useQueryChat(chatId: string) {
 }
 ```
 
-**Key points:**
-
-- Takes an `_id` and uses `.find()` to locate the item
-- `data` will be `undefined` if the item doesn't exist — components should handle this
+---
 
 ## Pattern 3: Mutation Collection
 
-Creates a new item. Returns `{ add }`. The `add` function generates `_id` and `_creationTime`, calls the store, shows a toast, and returns the new ID.
-
-### Example: `useMutationChats` — create a chat
+Creates a new item. Generates `_id` and `_creationTime`, calls the store, shows a toast, returns the new ID.
 
 ```typescript
 // src/chats/hooks/use-mutation-chats.ts
-
 import { toast } from "sonner";
 import type { CreateChatType } from "@/chats/types/chat";
 import { addChat } from "../store/chat";
@@ -100,12 +75,7 @@ export function useMutationChats() {
   const createChat = async (chat: CreateChatType): Promise<string | null> => {
     try {
       const chatId = crypto.randomUUID();
-      addChat({
-        ...chat,
-        _id: chatId,
-        _creationTime: Date.now(),
-      });
-
+      addChat({ ...chat, _id: chatId, _creationTime: Date.now() });
       toast.success("Chat created successfully");
       return chatId;
     } catch (error) {
@@ -116,29 +86,18 @@ export function useMutationChats() {
     }
   };
 
-  return {
-    add: createChat,
-  };
+  return { add: createChat };
 }
 ```
 
-**Key points:**
-
-- `_id` is generated with `crypto.randomUUID()` — universally unique, no collisions
-- `_creationTime` is `Date.now()` — millisecond timestamp
-- The function is `async` even though localStorage is synchronous — forward-compatible with real backends
-- Returns the new ID on success, `null` on failure
-- Toasts provide user feedback
+---
 
 ## Pattern 4: Mutation Single
 
-Updates or deletes an existing item. Takes the item's ID, returns `{ edit, delete }`.
-
-### Example: `useMutationChat` — update/delete a chat
+Updates or deletes an existing item. Uses `useQueryChat` internally for merge-updating. Handles cascade deletes for child resources.
 
 ```typescript
 // src/chats/hooks/use-mutation-chat.ts
-
 import { toast } from "sonner";
 import type { UpdateChatType } from "@/chats/types/chat";
 import { useQueryChat } from "./use-query-chat";
@@ -176,22 +135,13 @@ export function useMutationChat(chatId: string) {
     }
   };
 
-  return {
-    edit: editChat,
-    delete: deleteChat,
-  };
+  return { edit: editChat, delete: deleteChat };
 }
 ```
 
-**Key points:**
+---
 
-- Uses `useQueryChat` internally to get the current item (needed for merge-updating)
-- `edit` merges updates with the existing item using spread: `{ ...chat, ...updates }`
-- `delete` handles cascade deletes (removes messages before removing the chat)
-- Both return `boolean` — `true` on success, `false` on failure
-- Pages use the return value to decide navigation (e.g., navigate home after successful delete)
-
-## Summary Table
+## Summary
 
 | Pattern             | Takes           | Returns                      | Store Functions Used               |
 | ------------------- | --------------- | ---------------------------- | ---------------------------------- |

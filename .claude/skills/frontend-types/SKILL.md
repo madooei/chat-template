@@ -1,13 +1,12 @@
 ---
 name: frontend-types
-description: TypeScript type definition patterns for the frontend. Use when defining new types, creating Zod schemas for validation, writing type guards, or asking about type organization and naming conventions.
+description: TypeScript type definitions and Zod schemas. Use when defining new types, creating Zod schemas, adding a new entity, following the 3-schema pattern, or asking about type naming conventions, import patterns, or schema organization.
 allowed-tools:
   - Read
   - Write
   - Edit
   - Grep
   - Glob
-  - AskUserQuestion
   - WebSearch
   - WebFetch
 ---
@@ -26,10 +25,9 @@ Patterns for TypeScript type definitions in the frontend codebase.
 
 ## Quick Reference
 
-| Topic           | File                             | Description                            |
-| --------------- | -------------------------------- | -------------------------------------- |
-| **Zod Schemas** | [zod-schemas.md](zod-schemas.md) | Runtime validation and schema layering |
-| **Conventions** | [conventions.md](conventions.md) | Naming, organization, and patterns     |
+| Topic         | File                         | Description                                |
+| ------------- | ---------------------------- | ------------------------------------------ |
+| **Reference** | [reference.md](reference.md) | Real codebase examples and import patterns |
 
 ---
 
@@ -76,13 +74,11 @@ export type UpdateChatType = z.infer<typeof updateChatSchema>;
 export type ChatType = z.infer<typeof chatSchema>;
 ```
 
-**Why three schemas?**
+- `createSchema` — what the user controls. Used in forms and mutation hooks.
+- `updateSchema` — all fields optional. Used for partial edits.
+- `entitySchema` — adds system fields (`_id`, `_creationTime`). The full stored object.
 
-- `createSchema` defines what the user controls — used in forms and mutation hooks
-- `updateSchema` makes everything optional — used for partial edits
-- `entitySchema` adds system fields (`_id`, `_creationTime`) — represents the full stored object
-
-This layering means you define each field exactly once. The update and entity schemas derive from create.
+Each field is defined once. Update and entity schemas derive from create.
 
 ---
 
@@ -97,15 +93,15 @@ This layering means you define each field exactly once. The update and entity sc
 | `Update{Entity}Type`   | Update type      | `UpdateChatType`, `UpdateMessageType`     |
 | `{Entity}Type`         | Full entity type | `ChatType`, `MessageType`                 |
 
-Always use the `Type` suffix to distinguish types from components or variables:
+Always use the `Type` suffix to distinguish types from components or variables.
 
-```typescript
-// ✅ Clear — this is a type
-export type ChatType = z.infer<typeof chatSchema>;
+---
 
-// ❌ Ambiguous — could be a component, a class, a variable
-export type Chat = z.infer<typeof chatSchema>;
-```
+## Conventions
+
+- **Zod schemas** for entities and validated data. **Interfaces** for component props and function signatures.
+- Use `import type` for type-only imports.
+- `_id` and `_creationTime` are system fields (prefixed with `_`). Assigned by the store layer, never in create/update schemas.
 
 ---
 
@@ -122,5 +118,4 @@ export type Chat = z.infer<typeof chatSchema>;
 
 ## Detailed Documentation
 
-- [zod-schemas.md](zod-schemas.md) — Zod patterns, schema extension, validation, optional vs nullable
-- [conventions.md](conventions.md) — Naming rules, interface vs type, import patterns, type guards
+- [reference.md](reference.md) — Real codebase example (messages) and import patterns

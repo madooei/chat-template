@@ -6,17 +6,18 @@ Design patterns specific to AI chat interfaces (ChatGPT, Claude, Gemini conventi
 
 ## Layout
 
-| Element | Pattern |
-|---|---|
-| Overall | Sidebar (conversation list) + Main (active chat) |
-| Sidebar width | ~260px expanded; overlay drawer on mobile |
-| Content column | Centered, `max-w-3xl` (~768px) for readable line length (45–75 chars) |
-| Main vertical stack | Header (toolbar) → Scrollable messages (`flex-1`) → Fixed input at bottom |
-| Mobile (<768px) | Sidebar becomes sheet/drawer overlay; show hamburger in header; back arrow in chat header |
+| Element             | Pattern                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| Overall             | Sidebar (conversation list) + Main (active chat)                                          |
+| Sidebar width       | ~260px expanded; overlay drawer on mobile                                                 |
+| Content column      | Centered, `max-w-3xl` (~768px) for readable line length (45–75 chars)                     |
+| Main vertical stack | Header (toolbar) → Scrollable messages (`flex-1`) → Fixed input at bottom                 |
+| Mobile (<768px)     | Sidebar becomes sheet/drawer overlay; show hamburger in header; back arrow in chat header |
 
 ### Mobile Navigation (Critical)
 
 Every AI chat app uses this pattern on mobile:
+
 - **Viewing chat list:** Full-screen list, tap to open conversation
 - **Viewing conversation:** Full-screen chat with back arrow → returns to list
 - **Sidebar access:** Hamburger/menu icon in header opens drawer overlay
@@ -28,14 +29,15 @@ Every AI chat app uses this pattern on mobile:
 
 ### Display Rules
 
-| Role | Style |
-|---|---|
-| **User** | Right-aligned, subtle `bg-secondary` bubble, constrained width (`max-w-[80%]`) |
+| Role          | Style                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------- |
+| **User**      | Right-aligned, subtle `bg-secondary` bubble, constrained width (`max-w-[80%]`)          |
 | **Assistant** | Left-aligned, flat/transparent background, wider width (`max-w-[85%]`) for rich content |
 
 ### Differentiation (Three-Signal Approach)
 
 Distinguish user vs. AI messages using all three signals for accessibility:
+
 1. **Color** — Different backgrounds (bubble vs. transparent)
 2. **Alignment** — User right, assistant left
 3. **Iconography** — Small avatars (optional but helpful for scanning)
@@ -55,15 +57,15 @@ De-emphasize. Show on hover or omit entirely. AI conversations are not time-sens
 
 ## Input Area
 
-| Pattern | Implementation |
-|---|---|
-| Textarea | Auto-resize from 1 row up to ~240px max, then internal scroll |
-| Submit | `Enter` to send, `Shift+Enter` for newline |
-| Send button | Bottom-right, disabled when empty, enabled when content exists |
-| Stop button | Replace send button during streaming (square icon, destructive variant) |
-| Placeholder | Action-oriented: "Ask anything..." or "Message ChatBot..." |
-| Width | Match the message column `max-w-3xl` for visual alignment |
-| Hint | Small text: "Enter to send, Shift+Enter for new line" |
+| Pattern                | Implementation                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Textarea               | Auto-resize from 1 row up to ~240px max, then internal scroll                                                      |
+| Submit                 | `Enter` to send, `Shift+Enter` for newline                                                                         |
+| Send button            | Bottom-right, disabled when empty, enabled when content exists                                                     |
+| Stop button            | Replace send button during streaming (square icon, destructive variant)                                            |
+| Placeholder            | Action-oriented: "Ask anything..." or "Message ChatBot..."                                                         |
+| Width                  | Match the message column `max-w-3xl` for visual alignment                                                          |
+| Hint                   | Small text: "Enter to send, Shift+Enter for new line"                                                              |
 | Unimplemented features | Hide entirely, or show disabled with "Coming soon" tooltip. Never show active buttons that toast "not implemented" |
 
 ---
@@ -92,40 +94,40 @@ Show app logo, greeting, and prompt suggestion cards. Let users start chatting d
 
 ## Scrolling
 
-| Behavior | Rule |
-|---|---|
-| Auto-scroll | Only when user is at/near bottom. Use IntersectionObserver on a scroll anchor, not scroll math |
-| User scrolled up | Stop auto-scroll, respect their intent to read history |
-| Scroll-to-bottom button | Floating down-arrow, appears when not at bottom, smooth scroll on click |
-| During streaming | Continue auto-scroll if user was at bottom when streaming started; stop if they scroll up |
+| Behavior                | Rule                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| Auto-scroll             | Only when user is at/near bottom. Use IntersectionObserver on a scroll anchor, not scroll math |
+| User scrolled up        | Stop auto-scroll, respect their intent to read history                                         |
+| Scroll-to-bottom button | Floating down-arrow, appears when not at bottom, smooth scroll on click                        |
+| During streaming        | Continue auto-scroll if user was at bottom when streaming started; stop if they scroll up      |
 
 ---
 
 ## Conversation List
 
-| Pattern | Detail |
-|---|---|
-| Ordering | Most recent activity first |
-| Grouping | "Today", "Yesterday", "Previous 7 Days", "This Month", "Older" |
-| Active state | Distinct background + left border accent |
-| Actions | Edit (rename) and Delete via hover-reveal buttons or context menu |
-| Creating | "New Chat" button at top; or auto-create when user starts typing in empty state |
-| Titles | Auto-generate from first message; allow rename later |
-| Interactive elements | Never nest buttons inside other buttons — use sibling layout for accessibility |
+| Pattern              | Detail                                                                          |
+| -------------------- | ------------------------------------------------------------------------------- |
+| Ordering             | Most recent activity first                                                      |
+| Grouping             | "Today", "Yesterday", "Previous 7 Days", "This Month", "Older"                  |
+| Active state         | Distinct background + left border accent                                        |
+| Actions              | Edit (rename) and Delete via hover-reveal buttons or context menu               |
+| Creating             | "New Chat" button at top; or auto-create when user starts typing in empty state |
+| Titles               | Auto-generate from first message; allow rename later                            |
+| Interactive elements | Never nest buttons inside other buttons — use sibling layout for accessibility  |
 
 ---
 
 ## Accessibility
 
-| Requirement | Implementation |
-|---|---|
-| Message container | `role="log"` + `aria-label="Conversation messages"` (implicit `aria-live="polite"`) |
-| Streaming status | `aria-live="polite"` region announcing "Generating response..." / "Response complete" |
-| Input | `aria-label="Message input"` on textarea |
-| Focus management | Move focus to input when selecting a conversation; trap focus in dialogs |
-| Keyboard | All interactive elements reachable via Tab; Escape closes dialogs/menus |
-| Reduced motion | Respect `prefers-reduced-motion` for all animations |
-| Touch targets | Minimum 44x44px on mobile |
+| Requirement       | Implementation                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| Message container | `role="log"` + `aria-label="Conversation messages"` (implicit `aria-live="polite"`)   |
+| Streaming status  | `aria-live="polite"` region announcing "Generating response..." / "Response complete" |
+| Input             | `aria-label="Message input"` on textarea                                              |
+| Focus management  | Move focus to input when selecting a conversation; trap focus in dialogs              |
+| Keyboard          | All interactive elements reachable via Tab; Escape closes dialogs/menus               |
+| Reduced motion    | Respect `prefers-reduced-motion` for all animations                                   |
+| Touch targets     | Minimum 44x44px on mobile                                                             |
 
 ---
 

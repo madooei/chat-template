@@ -7,7 +7,8 @@ allowed-tools:
   - Edit
   - Grep
   - Glob
-  - Bash
+  - "Bash(npx shadcn@latest add *)"
+  - "Bash(npm install *)"
   - AskUserQuestion
   - WebSearch
   - WebFetch
@@ -26,26 +27,16 @@ How to work with prompt-kit components in this project.
 
 ## What is prompt-kit?
 
-prompt-kit is a set of copy-paste UI primitives for AI chat interfaces, built on top of Tailwind and shadcn/ui. It provides components like Message, ChatContainer, PromptInput, Markdown, CodeBlock, Loader, ScrollButton, etc.
-
-Like shadcn, you **own the code**. Components are copied into `src/components/prompt-kit/` and modified to fit our app. There is no npm dependency on prompt-kit itself.
+Copy-paste UI primitives for AI chat interfaces, built on Tailwind and shadcn/ui. Like shadcn, components are owned locally — copied into `src/components/prompt-kit/` and modified freely. No npm dependency on prompt-kit itself.
 
 ---
 
 ## Critical: Installation Does NOT Work via CLI
 
-**Do not attempt any of the following — they will fail:**
+The CLI and docs site aggressively rate-limit automated requests. Do not attempt:
 
-```bash
-# ❌ shadcn CLI — registry returns 429
-npx shadcn@latest add "https://prompt-kit.com/c/loader.json"
-
-# ❌ Docs site — blocks programmatic access (429)
-curl https://www.prompt-kit.com/docs/introduction
-curl https://www.prompt-kit.com/llms.txt
-```
-
-The prompt-kit documentation site and component registry aggressively rate-limit automated requests. The shadcn CLI installation commands shown in their docs **do not work** in practice.
+- `npx shadcn@latest add "https://prompt-kit.com/c/..."` — registry returns 429
+- `curl https://www.prompt-kit.com/docs/...` or `llms.txt` — blocked (429)
 
 ---
 
@@ -95,14 +86,14 @@ Every component pulled from prompt-kit needs these adaptations:
 
 #### Import paths
 
-The original uses `@/components/ui/*` and `@/lib/utils` — these already match our project structure. But check for:
+Original uses `@/components/ui/*` and `@/lib/utils` — these match the project structure. Check for:
 
-- **Internal prompt-kit references**: e.g., `import { Markdown } from "./markdown"` — these are fine if you already have the dependency component, otherwise pull that too.
-- **shadcn/ui components you don't have yet**: If the component imports from `@/components/ui/avatar` and you don't have it, install it with `npx shadcn@latest add avatar`.
+- **Internal prompt-kit references**: e.g., `import { Markdown } from "./markdown"` — fine if the dependency component exists, otherwise pull that too.
+- **Missing shadcn/ui components**: If it imports from `@/components/ui/avatar` and that doesn't exist, install with `npx shadcn@latest add avatar`.
 
 #### `"use client"` directive
 
-The original prompt-kit components include `"use client"` at the top because they target Next.js. **This is unnecessary in our Vite + React setup** but harmless — you can leave it or remove it. Be consistent with what's already in the project.
+Original components include `"use client"` for Next.js. Unnecessary in this Vite + React setup but harmless — leave it or remove it. Be consistent with existing components.
 
 #### App-specific adaptations
 
@@ -112,11 +103,9 @@ Some components may need deeper changes to integrate with our app:
 - **message.tsx**: The local version adjusts base styling classes (e.g., adding `prose prose-neutral break-words whitespace-normal`).
 - **scroll-button.tsx**: Imports `buttonVariants` from our extracted `@/components/ui/button-variants` module.
 
-These kinds of adaptations are expected and encouraged — the whole point is to own and customize the components.
-
 #### Dependencies
 
-Check if the component needs npm packages you don't have:
+Check for missing npm dependencies:
 
 | Component      | Dependencies                                              |
 | -------------- | --------------------------------------------------------- |
@@ -128,7 +117,7 @@ Check if the component needs npm packages you don't have:
 
 #### Keyframe animations
 
-Some components (especially `loader.tsx`) require custom CSS keyframe animations. These should be added to `src/styles/index.css`. Check the component source for `animate-[...]` class patterns and ensure the corresponding `@keyframes` exist.
+Some components (especially `loader.tsx`) require custom CSS keyframes. Add them to `src/styles/index.css`. Check the source for `animate-[...]` class patterns and ensure corresponding `@keyframes` exist.
 
 ---
 
@@ -181,17 +170,15 @@ import { ScrollButton } from "@/components/prompt-kit/scroll-button";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
 ```
 
-These are **primitives** — compose them together in your feature components. They do not contain business logic.
-
 ---
 
 ## Reference Documentation
 
-Since the docs site is not accessible programmatically, this skill folder contains manually copied documentation:
+The docs site is not accessible programmatically, so this skill folder contains manually copied documentation:
 
-| File | Description |
-| ---- | ----------- |
-| [prompt-kit-llm.md](prompt-kit-llm.md) | Short summary — component overview, quick API reference |
+| File                                             | Description                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| [prompt-kit-llm.md](prompt-kit-llm.md)           | Short summary — component overview, quick API reference     |
 | [prompt-kit-llm-full.md](prompt-kit-llm-full.md) | Full docs — detailed component APIs, props tables, examples |
 
 Start with the short version. Use the full version when you need detailed prop tables or usage examples.

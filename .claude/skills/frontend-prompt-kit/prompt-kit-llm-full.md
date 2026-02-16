@@ -550,6 +550,7 @@ language="tsx"
 As you've seen in our examples, code blocks within prose content can sometimes cause styling conflicts. The Tailwind Typography plugin provides a `not-prose` class to exclude elements from prose styling:
 
 <CodeBlock code={`<article className="prose">
+
 <h1>My Content</h1>
 <p>Regular content with prose styling...</p>
 
@@ -1909,6 +1910,7 @@ thumbnail: "https://faithbase.ai/opengraph.jpg",
 
 export default function Showcase() {
 return (
+
 <div className="not-prose w-full flex-auto pt-2.5">
 <div className="relative w-full pb-16">
 <h1 className="text-sm font-medium text-[#0D74CE] dark:text-[#70B8FF]">

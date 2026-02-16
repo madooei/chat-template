@@ -1,14 +1,13 @@
-# Common Component Patterns
+# Component Patterns
 
 Real patterns from this codebase.
 
 ## Page Component
 
-Pages are thin. They wire hooks to components and handle navigation. They should not contain rendering logic:
+Pages are thin wrappers. They call hooks, handle navigation, and pass callbacks to components. Default export.
 
 ```typescript
 // src/chats/pages/add-chat-page.tsx
-
 import type { CreateChatType } from "@/chats/types/chat";
 import { $router } from "@/chats/store/router";
 import { useMutationChats } from "@/chats/hooks/use-mutation-chats";
@@ -41,19 +40,14 @@ const AddChatPage: React.FC = () => {
 export default AddChatPage;
 ```
 
-**Key points:**
-
-- Pages call hooks and pass callbacks to components
-- Navigation logic lives in the page, not the component
-- Default export (pages are the entry point for routes)
+---
 
 ## Form Component
 
-Forms use controlled inputs with `useState`. No form library — keep it simple:
+Controlled inputs with `useState`. No form library. The form doesn't know about routing or stores — `onSubmit`/`onCancel` come from the parent page.
 
 ```typescript
 // src/chats/components/add-chat-form.tsx
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CreateChatType } from "@/chats/types/chat";
@@ -104,20 +98,14 @@ const AddChatForm: React.FC<AddChatFormProps> = ({ onSubmit, onCancel }) => {
 export default AddChatForm;
 ```
 
-**Key points:**
-
-- `onSubmit` and `onCancel` come from the parent page — the form doesn't know about routing or stores
-- Trim input before submitting
-- Disable submit button when input is empty
-- Use `e.preventDefault()` on form submit
+---
 
 ## List Component
 
-Lists render arrays of items. Handle the empty state inline:
+Renders an array of items. Early return for empty state. Active item highlighted with `cn()` conditional class.
 
 ```typescript
 // src/chats/components/chat-list.tsx
-
 import { useStore } from "@nanostores/react";
 import { cn } from "@/lib/utils";
 import { $chats } from "@/chats/store/chat";
@@ -161,20 +149,14 @@ const ChatList: React.FC<ChatListProps> = ({ activeChatId }) => {
 export default ChatList;
 ```
 
-**Key points:**
-
-- Empty state returned early as a simple `<p>` with `text-muted-foreground`
-- `key={item._id}` on list items
-- Active item highlighted with `cn()` conditional class
-- `truncate` on text that might overflow
+---
 
 ## Message Bubble
 
-A presentational component that renders differently based on data:
+Presentational component that renders differently based on `role`. Uses CSS variables for theme-safe colors.
 
 ```typescript
 // src/messages/components/message.tsx
-
 import { cn } from "@/lib/utils";
 import type { MessageType } from "@/messages/types/message";
 
@@ -216,20 +198,14 @@ const Message: React.FC<MessageProps> = ({ message, onDelete }) => {
 export default Message;
 ```
 
-**Key points:**
-
-- Uses CSS variables (`bg-primary`, `bg-secondary`) so it works in both light and dark mode
-- `cn()` for conditional alignment and color based on `role`
-- Optional callback (`onDelete?`) — component renders differently when callback is provided
-- `whitespace-pre-wrap` preserves line breaks in message content
+---
 
 ## Scrollable List with Auto-Scroll
 
-When a list should auto-scroll to the bottom on new items (e.g., messages):
+Invisible `<div ref={bottomRef} />` at the end. `useEffect` scrolls to it on new items.
 
 ```typescript
 // src/messages/components/message-list.tsx
-
 import { useRef, useEffect } from "react";
 import type { MessageType } from "@/messages/types/message";
 import Message from "./message";
@@ -267,19 +243,14 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
 export default MessageList;
 ```
 
-**Key points:**
-
-- Invisible `<div ref={bottomRef} />` at the end of the list
-- `useEffect` scrolls to it whenever `messages` changes
-- `overflow-y-auto h-full` makes the container scrollable within its parent
+---
 
 ## Input with Action
 
-A text input with a submit action and optional mode toggle:
+Enter sends, Shift+Enter for newlines. Content clears after send.
 
 ```typescript
 // src/messages/components/message-input.tsx
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
@@ -335,20 +306,14 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend }) => {
 export default MessageInput;
 ```
 
-**Key points:**
-
-- Enter sends, Shift+Enter for newlines
-- Content clears after send, role persists
-- Disable send button when input is empty
-- `shrink-0` on the role toggle prevents it from shrinking in flex layout
+---
 
 ## Composite Page
 
-A page that composes multiple components into a full view:
+Three-zone layout: header (`border-b`), body (`flex-1 overflow-y-auto`), footer (`flex-none`). Not-found guard at top.
 
 ```typescript
 // src/messages/pages/messages-page.tsx
-
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { $router } from "@/chats/store/router";
@@ -406,9 +371,3 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
 
 export default MessagesPage;
 ```
-
-**Key points:**
-
-- Three-zone layout: header (`border-b`), body (`flex-1 overflow-y-auto`), footer (`flex-none`)
-- Not-found guard at the top
-- Page wires hooks to components — components are reusable, pages are specific
