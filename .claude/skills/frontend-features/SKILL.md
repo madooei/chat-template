@@ -23,6 +23,7 @@ Patterns for creating and organizing feature modules in the frontend codebase.
 - **[frontend-components](../frontend-components/SKILL.md)** — UI component patterns
 - **[frontend-routing](../frontend-routing/SKILL.md)** — Routing and navigation
 - **[frontend-design](../frontend-design/SKILL.md)** — Visual design and theming
+- **[feature-spec](../feature-spec/SKILL.md)** — Writing SPEC.md documents for features
 
 ---
 
