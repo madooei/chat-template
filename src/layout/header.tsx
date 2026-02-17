@@ -39,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             size="icon"
             className="w-7 h-7"
             tooltipContent="Settings"
+            aria-label="Settings"
             onClick={() => setSettingsOpen(true)}
           >
             <Settings className="h-4 w-4" />

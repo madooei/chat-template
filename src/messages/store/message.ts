@@ -4,7 +4,7 @@ import { messageSchema, type MessageType } from "@/messages/types/message";
 
 const DEBUG = false;
 
-function decodeMessages(value: string): MessageType[] {
+export function decodeMessages(value: string): MessageType[] {
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];

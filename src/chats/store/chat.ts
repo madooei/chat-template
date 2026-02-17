@@ -4,7 +4,7 @@ import { chatSchema, type ChatType } from "@/chats/types/chat";
 
 const DEBUG = false;
 
-function decodeChats(value: string): ChatType[] {
+export function decodeChats(value: string): ChatType[] {
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];

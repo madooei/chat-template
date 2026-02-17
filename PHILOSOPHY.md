@@ -6,6 +6,8 @@ This document explains _why_ we chose every piece of this stack. Not just what w
 
 **Stable, small, AI-friendly tools that compose well and don't fight you.**
 
+This repo is optimized from the start to work with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) as the primary development tool. Every technology choice, every architectural pattern, and the folder structure itself are designed so that Claude Code can reason about the entire system and generate correct, consistent code. The `.claude/skills/` directory encodes our conventions as executable knowledge — when you ask Claude Code to add a feature, it follows the same patterns a human would, because those patterns are explicitly documented where the AI can find them.
+
 We're optimizing for a sweet spot between three tensions:
 
 - **Modern enough** to be relevant and enjoyable to use
@@ -114,6 +116,37 @@ This template is also designed to be built _with_ AI. We use Claude Code as our 
 
 When you ask Claude Code to add a feature, the skills ensure it produces code that fits the architecture. When you read the skills, you learn the architecture. Same artifact, two audiences.
 
+## Testing
+
+### Why Vitest
+
+Vitest is native to Vite — it reuses the same config, aliases, and transforms, so there's zero extra bundler configuration. Its API is Jest-compatible, which means massive AI training data and instant familiarity for anyone who's tested JavaScript before. It's ESM-native, fast, and does one thing well: run unit and integration tests.
+
+### Why React Testing Library
+
+React Testing Library tests components the way users use them — through observable behavior, not implementation details. You query by role, label, and text, not by CSS class or component internals. This aligns naturally with the SPEC.md approach where "Key Behaviors" map directly to test cases. It's the de facto standard for React testing.
+
+### Why Playwright
+
+Playwright runs real browser E2E tests. Microsoft-backed, stable, TypeScript-first, with an API that reads like English (`page.click`, `expect(page).toHaveURL`). Good CLI and MCP integration for AI-assisted development. We use Chromium-only to keep the test matrix simple.
+
+### The Testing Pyramid
+
+The pyramid maps directly to the architecture:
+
+| Layer          | Tool                                | What you test                                                                   |
+| -------------- | ----------------------------------- | ------------------------------------------------------------------------------- |
+| **Stores**     | Vitest                              | Pure function logic — add, remove, update, Zod decode safety                    |
+| **Hooks**      | Vitest + `renderHook`               | React integration — query hooks return store data, mutation hooks modify stores |
+| **Components** | Vitest + RTL `render` + `userEvent` | User interactions — click, type, submit, conditional rendering                  |
+| **E2E**        | Playwright                          | Full browser journeys — create chat, send message, change settings              |
+
+Each layer tests different concerns. Stores are pure functions (no React). Hooks need `renderHook` but no DOM. Components need a DOM but no real browser. E2E needs a real browser but tests the whole system.
+
+### What We Don't Test
+
+Third-party code. We own the shadcn and prompt-kit files (they live in `src/components/`), but they're copies of upstream libraries. We test _our usage_ of these components — that our props work, our callbacks fire, our composition renders — not the internals of Radix UI or prompt-kit itself.
+
 ## The Guiding Heuristic
 
 When choosing a technology or pattern, ask:
@@ -124,4 +157,4 @@ When choosing a technology or pattern, ask:
 - **Is it swappable?** Can I replace it without rewriting everything above it?
 - **Is it teachable?** Can a student understand the whole thing, not just their corner of it?
 
-If the answer to all five is yes, it belongs in the stack.
+If most answers are yes, it's a strong candidate. If one is no, there should be a clear pragmatic reason — the way React fails "small" and "teachable" but wins on ecosystem, AI training data, and job market relevance. The heuristics are weighted, not binary. No tool is perfect; the question is whether the tradeoffs are deliberate and justified.

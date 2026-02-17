@@ -5,3 +5,6 @@ node_modules
 dist
 pnpm-lock.yaml
 public/pdf.worker.min.mjs
+playwright-report
+test-results
+specs

@@ -9,7 +9,7 @@ const defaultSettings: SettingsType = {
   geminiApiKey: "",
 };
 
-function decodeSettings(value: string): SettingsType {
+export function decodeSettings(value: string): SettingsType {
   try {
     const parsed = JSON.parse(value);
     const result = settingsSchema.safeParse(parsed);
