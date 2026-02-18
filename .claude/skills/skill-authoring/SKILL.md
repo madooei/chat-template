@@ -53,7 +53,7 @@ Rules:
 
 - Include 3-8 specific trigger phrases that a user would naturally say
 - Use action verbs: "creating", "implementing", "debugging", "adding", "configuring"
-- Include tool/library names: "shadcn/ui", "nanostores", "zod"
+- Include tool/library names: "shadcn/ui", "Legend-State", "zod"
 - Never use second person ("you") or marketing language
 
 ---

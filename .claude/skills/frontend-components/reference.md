@@ -8,23 +8,24 @@ Pages are thin wrappers. They call hooks, handle navigation, and pass callbacks 
 
 ```typescript
 // src/chats/pages/add-chat-page.tsx
+import { useLocation } from "wouter";
 import type { CreateChatType } from "@/chats/types/chat";
-import { $router } from "@/chats/store/router";
 import { useMutationChats } from "@/chats/hooks/use-mutation-chats";
 import AddChatForm from "@/chats/components/add-chat-form";
 
 const AddChatPage: React.FC = () => {
+  const [, setLocation] = useLocation();
   const { add: createChat } = useMutationChats();
 
   const handleSubmit = async (values: CreateChatType) => {
     const chatId = await createChat(values);
     if (chatId) {
-      $router.open(`/chats/${chatId}/messages`);
+      setLocation(`/chats/${chatId}/messages`);
     }
   };
 
   const handleCancel = () => {
-    $router.open("/");
+    setLocation("/");
   };
 
   return (
@@ -106,17 +107,18 @@ Renders an array of items. Early return for empty state. Active item highlighted
 
 ```typescript
 // src/chats/components/chat-list.tsx
-import { useStore } from "@nanostores/react";
+import { useLocation } from "wouter";
+import { useSelector } from "@legendapp/state/react";
 import { cn } from "@/lib/utils";
 import { $chats } from "@/chats/store/chat";
-import { $router } from "@/chats/store/router";
 
 interface ChatListProps {
   activeChatId?: string;
 }
 
 const ChatList: React.FC<ChatListProps> = ({ activeChatId }) => {
-  const chats = useStore($chats);
+  const [, setLocation] = useLocation();
+  const chats = useSelector(() => $chats.get());
 
   if (chats.length === 0) {
     return (
@@ -131,7 +133,7 @@ const ChatList: React.FC<ChatListProps> = ({ activeChatId }) => {
       {chats.map((chat) => (
         <li key={chat._id}>
           <button
-            onClick={() => $router.open(`/chats/${chat._id}/messages`)}
+            onClick={() => setLocation(`/chats/${chat._id}/messages`)}
             className={cn(
               "w-full text-left px-3 py-2 rounded-md text-sm truncate",
               "hover:bg-secondary",
@@ -314,9 +316,9 @@ Three-zone layout: header (`border-b`), body (`flex-1 overflow-y-auto`), footer 
 
 ```typescript
 // src/messages/pages/messages-page.tsx
+import { useLocation } from "wouter";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { $router } from "@/chats/store/router";
 import { useQueryChat } from "@/chats/hooks/use-query-chat";
 import { useQueryMessages } from "@/messages/hooks/use-query-messages";
 import { useMutationMessages } from "@/messages/hooks/use-mutation-messages";
@@ -329,6 +331,7 @@ interface MessagesPageProps {
 }
 
 const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
+  const [, setLocation] = useLocation();
   const { data: chat } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
   const { add: createMessage } = useMutationMessages();
@@ -354,7 +357,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => $router.open(`/chats/${chatId}`)}
+          onClick={() => setLocation(`/chats/${chatId}`)}
         >
           <Settings className="h-4 w-4" />
         </Button>

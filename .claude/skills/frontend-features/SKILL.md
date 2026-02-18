@@ -18,7 +18,7 @@ Patterns for creating and organizing feature modules in the frontend codebase.
 ## Related Skills
 
 - **[frontend-types](../frontend-types/SKILL.md)** — Type definitions and Zod schemas
-- **[frontend-state](../frontend-state/SKILL.md)** — State management with nanostores
+- **[frontend-state](../frontend-state/SKILL.md)** — State management with Legend-State
 - **[frontend-hooks](../frontend-hooks/SKILL.md)** — Hook patterns for data and logic
 - **[frontend-components](../frontend-components/SKILL.md)** — UI component patterns
 - **[frontend-routing](../frontend-routing/SKILL.md)** — Routing and navigation
@@ -74,14 +74,14 @@ src/
 
 Each feature follows the `types/ → store/ → hooks/ → components/ → pages/` pipeline. Each layer depends only on the layers before it. Create only what you need:
 
-| Directory     | Purpose               | When to Create                          |
-| ------------- | --------------------- | --------------------------------------- |
-| `types/`      | Zod schemas and types | Almost always — defines the data shape  |
-| `store/`      | Nanostores state      | When the feature manages its own state  |
-| `hooks/`      | Custom React hooks    | When components need data or logic      |
-| `components/` | React components      | Always — features need UI               |
-| `pages/`      | Route page components | When the feature has navigable views    |
-| `lib/`        | Utilities, helpers    | When you need pure functions, constants |
+| Directory     | Purpose                  | When to Create                          |
+| ------------- | ------------------------ | --------------------------------------- |
+| `types/`      | Zod schemas and types    | Almost always — defines the data shape  |
+| `store/`      | Legend-State observables | When the feature manages its own state  |
+| `hooks/`      | Custom React hooks       | When components need data or logic      |
+| `components/` | React components         | Always — features need UI               |
+| `pages/`      | Route page components    | When the feature has navigable views    |
+| `lib/`        | Utilities, helpers       | When you need pure functions, constants |
 
 ---
 
@@ -120,7 +120,7 @@ When in doubt, keep it in the feature.
 - [ ] Create hooks in `hooks/` for data access and mutations
 - [ ] Create components in `components/`
 - [ ] Add page components in `pages/` if the feature has routes
-- [ ] Update the router in `src/app/router.ts` if adding routes
+- [ ] Add `<Route>` inside `<Switch>` in `src/App.tsx` if adding routes
 - [ ] Update `src/App.tsx` if adding new pages
 - [ ] Do NOT create `index.ts` at feature root
 

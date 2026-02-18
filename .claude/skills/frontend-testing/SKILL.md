@@ -1,6 +1,6 @@
 ---
 name: frontend-testing
-description: "Testing patterns with Vitest, React Testing Library, and Playwright. Use when writing tests, creating test files, testing stores, testing hooks, testing components, running tests, mocking localStorage, mocking AI SDK, mocking nanostores, or asking about test conventions, file naming, and what to test."
+description: "Testing patterns with Vitest, React Testing Library, and Playwright. Use when writing tests, creating test files, testing stores, testing hooks, testing components, running tests, mocking localStorage, mocking AI SDK, mocking Legend-State, or asking about test conventions, file naming, and what to test."
 allowed-tools:
   - Read
   - Write
@@ -47,15 +47,15 @@ e2e/chat-flow.spec.ts                            # E2E test
 
 ## Mocking Patterns
 
-| What                | How                                                | Why                                                              |
-| ------------------- | -------------------------------------------------- | ---------------------------------------------------------------- |
-| Persistent storage  | `testStorage` from `@/test/setup` + `$store.set()` | Custom storage engine replaces jsdom's broken localStorage proxy |
-| AI SDK              | `vi.mock("@/lib/ai")`                              | Mock at our abstraction boundary, not the SDK                    |
-| Nanostores          | Import `$store` + `.set()` directly                | Direct store manipulation, reset in `beforeEach`                 |
-| `crypto.randomUUID` | Stubbed globally in `setup.ts`                     | Deterministic IDs: `test-uuid-1`, `test-uuid-2`, etc.            |
-| `sonner` toasts     | `vi.mock("sonner")`                                | Verify toast calls without DOM portals                           |
-| Router              | `vi.mock("@/app/router")`                          | Test navigation without real routing                             |
-| `ResizeObserver`    | Stubbed globally in `setup.ts`                     | Radix UI needs it; jsdom doesn't provide it                      |
+| What                | How                                                     | Why                                                   |
+| ------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| localStorage        | Stubbed globally in `setup.ts` + `localStorage.clear()` | Full Storage API stub for Legend-State persistence    |
+| AI SDK              | `vi.mock("@/lib/ai")`                                   | Mock at our abstraction boundary, not the SDK         |
+| Legend-State stores | Import `$store` + `.set()` directly                     | Direct store manipulation, reset in `beforeEach`      |
+| `crypto.randomUUID` | Stubbed globally in `setup.ts`                          | Deterministic IDs: `test-uuid-1`, `test-uuid-2`, etc. |
+| `sonner` toasts     | `vi.mock("sonner")`                                     | Verify toast calls without DOM portals                |
+| Router (Wouter)     | `vi.mock("wouter")`                                     | Test navigation without real routing                  |
+| `ResizeObserver`    | Stubbed globally in `setup.ts`                          | Radix UI needs it; jsdom doesn't provide it           |
 
 ## Store Test Pattern
 

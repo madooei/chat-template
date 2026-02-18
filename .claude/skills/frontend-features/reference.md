@@ -7,8 +7,7 @@ chats/
 ├── types/
 │   └── chat.ts                # Zod schemas + ChatType
 ├── store/
-│   ├── chat.ts                # $chats atom + CRUD functions
-│   └── router.ts              # App-wide route definitions
+│   └── chat.ts                # $chats observable + CRUD functions
 ├── hooks/
 │   ├── use-query-chats.ts     # List all chats
 │   ├── use-query-chat.ts      # Get single chat by ID
@@ -31,7 +30,7 @@ messages/
 ├── types/
 │   └── message.ts             # Zod schemas + MessageType
 ├── store/
-│   └── message.ts             # $messages atom + CRUD functions
+│   └── message.ts             # $messages observable + CRUD functions
 ├── hooks/
 │   ├── use-query-messages.ts  # List messages by chatId
 │   ├── use-query-message.ts   # Get single message by ID
@@ -69,7 +68,6 @@ messages/
 ```typescript
 // Cross-feature or shared (use @/)
 import { Button } from "@/components/ui/button";
-import { $router } from "@/app/router";
 import type { ChatType } from "@/chats/types/chat";
 
 // Within same feature (use relative)
@@ -86,7 +84,7 @@ Four groups, separated by blank lines:
 import { useState, useEffect } from "react";
 
 // 2. Third-party libraries
-import { useStore } from "@nanostores/react";
+import { useSelector } from "@legendapp/state/react";
 import { toast } from "sonner";
 
 // 3. Absolute path imports (@/)
@@ -108,8 +106,11 @@ import { updateChat, removeChat } from "@/chats/store/chat";
 import { removeMessagesByChatId } from "@/messages/store/message";
 ```
 
-The router lives in `src/app/router.ts` and is imported by all features:
+Navigation uses Wouter's `useLocation` hook:
 
 ```typescript
-import { $router } from "@/app/router";
+import { useLocation } from "wouter";
+
+const [, setLocation] = useLocation();
+setLocation(`/chats/${chatId}/messages`);
 ```

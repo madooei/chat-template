@@ -1,6 +1,6 @@
 ---
 name: frontend-routing
-description: Routing patterns with @nanostores/router. Use when adding routes, adding a new page, implementing navigation, using createRouter or $router, working with route parameters, or asking about how pages are resolved and rendered.
+description: Routing patterns with Wouter. Use when adding routes, adding a new page, implementing navigation, using useLocation or Route, working with route parameters, or asking about how pages are resolved and rendered.
 allowed-tools:
   - Read
   - Write
@@ -13,7 +13,7 @@ allowed-tools:
 
 # Frontend Routing Guide
 
-Patterns for routing with `@nanostores/router`.
+Patterns for routing with Wouter.
 
 ## Related Skills
 
@@ -24,127 +24,133 @@ Patterns for routing with `@nanostores/router`.
 
 ## Architecture
 
-Routing is centralized in one file:
+Routing is handled by Wouter's JSX components in `App.tsx`. There is no separate router configuration file — routes are declared inline as `<Route>` components.
 
-```plaintext
-src/app/
-└── router.ts       # Route definitions + route-to-page resolution
+Navigation is done via the `useLocation` hook from Wouter:
+
+```typescript
+import { useLocation } from "wouter";
+
+const [location, setLocation] = useLocation();
+setLocation("/chats/abc/messages");
 ```
-
-`App.tsx` imports `$router` and renders whatever page the router resolves. Every feature can import it via `import { $router } from "@/app/router"`.
 
 ---
 
 ## Route Definition
 
-Routes are a flat map of route names to URL patterns:
-
-```typescript
-// src/app/router.ts
-import { createRouter } from "@nanostores/router";
-
-export const $router = createRouter({
-  home: "/",
-  messages: "/chats/:id/messages",
-});
-```
-
-Order matters — more specific routes before less specific ones.
-
----
-
-## Route Resolution
-
-`App.tsx` subscribes to `$router` and renders the appropriate page. Parameters are accessed via `page.params` (always strings). The layout uses a `sidebar` + `content` pattern:
+Routes are declared as `<Route>` components inside a `<Switch>` in `App.tsx`:
 
 ```typescript
 // src/App.tsx
-import { useStore } from "@nanostores/react";
-import { $router } from "@/app/router";
+import { Switch, Route, useLocation } from "wouter";
 
 function App() {
-  const page = useStore($router);
-  const activeChatId = page?.route === "messages" ? page.params.id : undefined;
+  const [location] = useLocation();
 
-  const renderContent = () => {
-    switch (page?.route) {
-      case "messages":
-        return <MessagesPage chatId={page.params.id} />;
-      default:
-        return <HomeEmptyState />;
-    }
-  };
+  // Derive active chat ID from URL
+  const chatIdMatch = location.match(/^\/chats\/([^/]+)\/messages$/);
+  const activeChatId = chatIdMatch ? chatIdMatch[1] : undefined;
 
   return (
     <Layout
       sidebar={<ListChatsPage activeChatId={activeChatId} />}
-      content={renderContent()}
+      content={
+        <Switch>
+          <Route path="/chats/:id/messages">
+            {(params) => (
+              <MessagesPage key={params.id} chatId={params.id} />
+            )}
+          </Route>
+          <Route>
+            <HomeEmptyState />
+          </Route>
+        </Switch>
+      }
     />
   );
 }
 ```
 
-`page` is `null` when no route matches (404 state).
+The last `<Route>` without a `path` acts as the default (home/404).
 
 ---
 
 ## Navigation
 
-Navigate with `$router.open()` using URL strings (not route names):
+Navigate with `useLocation` hook from Wouter:
 
 ```typescript
-import { $router } from "@/app/router";
+import { useLocation } from "wouter";
 
-$router.open("/");
-$router.open(`/chats/${chatId}/messages`);
+const [, setLocation] = useLocation();
+
+setLocation("/");
+setLocation(`/chats/${chatId}/messages`);
 ```
 
 ---
 
 ## Deriving State from Routes
 
-Use the current route to derive UI state like active items in a sidebar:
+Use `useLocation` + regex to derive UI state like active items in a sidebar:
 
 ```typescript
-const page = useStore($router);
+const [location] = useLocation();
 
-const activeChatId =
-  page?.route === "messages" ? page.params.id : undefined;
+const chatIdMatch = location.match(/^\/chats\/([^/]+)\/messages$/);
+const activeChatId = chatIdMatch ? chatIdMatch[1] : undefined;
 
 return <ChatList activeChatId={activeChatId} />;
 ```
 
 ---
 
+## Route Parameters
+
+Route parameters are accessed via the render function pattern:
+
+```typescript
+<Route path="/chats/:id/messages">
+  {(params) => <MessagesPage chatId={params.id} />}
+</Route>
+```
+
+Or via `useRoute` hook:
+
+```typescript
+import { useRoute } from "wouter";
+
+const [match, params] = useRoute("/chats/:id/messages");
+if (match) {
+  // params.id is available
+}
+```
+
+---
+
 ## Adding a New Route
 
-1. Add the route to `createRouter` in `src/app/router.ts`:
+1. Create the page component in the appropriate feature's `pages/` directory
+
+2. Add a `<Route>` inside the `<Switch>` in `App.tsx`:
 
    ```typescript
-   export const $router = createRouter({
-     // ... existing routes
-     newRoute: "/some/path/:param",
-   });
+   <Route path="/some/path/:param">
+     {(params) => <NewPage param={params.param} />}
+   </Route>
    ```
 
-2. Create the page component in the appropriate feature's `pages/` directory
+3. Update derived state (e.g., `activeChatId` regex) if the new route should affect sidebar highlighting
 
-3. Add a `case` branch in the `renderContent` switch in `App.tsx`:
-
-   ```typescript
-   case "newRoute":
-     return <NewPage param={page.params.param} />;
-   ```
-
-4. Update derived state (e.g., `activeChatId`) if the new route should highlight a sidebar item
+4. Add navigation calls using `setLocation` in the appropriate components
 
 ---
 
 ## Checklist for New Routes
 
-- [ ] Add route to `createRouter` map in `src/app/router.ts`
-- [ ] Place more specific patterns before less specific ones
 - [ ] Create page component in `{feature}/pages/`
-- [ ] Add `case` branch in `App.tsx` `renderContent` switch
-- [ ] Update derived state (e.g., `activeChatId`) if needed
-- [ ] Update navigation calls in related pages
+- [ ] Add `<Route>` inside `<Switch>` in `App.tsx`
+- [ ] Update derived state regex if needed
+- [ ] Add navigation calls using `useLocation` + `setLocation`
+- [ ] Update tests to mock `wouter` if components use `useLocation`

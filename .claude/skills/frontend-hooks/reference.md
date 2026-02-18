@@ -9,11 +9,11 @@ Lists all items, or filters by a parent ID.
 ```typescript
 // src/chats/hooks/use-query-chats.ts
 import type { ChatType } from "@/chats/types/chat";
-import { useStore } from "@nanostores/react";
+import { useSelector } from "@legendapp/state/react";
 import { $chats } from "@/chats/store/chat";
 
 export function useQueryChats() {
-  const chats = useStore($chats);
+  const chats = useSelector(() => $chats.get());
 
   return {
     data: chats as ChatType[],
@@ -28,7 +28,7 @@ With filtering by parent ID:
 ```typescript
 // src/messages/hooks/use-query-messages.ts
 export function useQueryMessages(chatId: string) {
-  const messages = useStore($messages);
+  const messages = useSelector(() => $messages.get());
   const filtered = messages.filter((m) => m.chatId === chatId);
 
   return {
@@ -48,7 +48,7 @@ Finds one item by ID. `data` is `undefined` if the item doesn't exist.
 ```typescript
 // src/chats/hooks/use-query-chat.ts
 export function useQueryChat(chatId: string) {
-  const chats = useStore($chats);
+  const chats = useSelector(() => $chats.get());
   const chat = chats.find((c) => c._id === chatId);
 
   return {
@@ -143,9 +143,9 @@ export function useMutationChat(chatId: string) {
 
 ## Summary
 
-| Pattern             | Takes           | Returns                      | Store Functions Used               |
-| ------------------- | --------------- | ---------------------------- | ---------------------------------- |
-| Query Collection    | optional filter | `{ data[], loading, error }` | `useStore($atom)`                  |
-| Query Single        | `_id`           | `{ data, loading, error }`   | `useStore($atom)` + find           |
-| Mutation Collection | nothing         | `{ add }`                    | `addEntity()`                      |
-| Mutation Single     | `_id`           | `{ edit, delete }`           | `updateEntity()`, `removeEntity()` |
+| Pattern             | Takes           | Returns                      | Store Functions Used                   |
+| ------------------- | --------------- | ---------------------------- | -------------------------------------- |
+| Query Collection    | optional filter | `{ data[], loading, error }` | `useSelector(() => $obs.get())`        |
+| Query Single        | `_id`           | `{ data, loading, error }`   | `useSelector(() => $obs.get())` + find |
+| Mutation Collection | nothing         | `{ add }`                    | `addEntity()`                          |
+| Mutation Single     | `_id`           | `{ edit, delete }`           | `updateEntity()`, `removeEntity()`     |

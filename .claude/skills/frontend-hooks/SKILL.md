@@ -111,7 +111,7 @@ src/
 - [ ] Create in `{feature}/hooks/`
 - [ ] Name with `use-query-*` or `use-mutation-*` prefix
 - [ ] Plural for collection hooks, singular for single-item hooks
-- [ ] Query hooks: subscribe with `useStore`, return `{ data, loading, error }`
+- [ ] Query hooks: subscribe with `useSelector` from `@legendapp/state/react`, return `{ data, loading, error }`
 - [ ] Mutation hooks: wrap in try/catch, show toasts via `sonner`
 - [ ] Mutation hooks: return `async` functions (forward-compatible with backends)
 - [ ] Export named function (not default export)

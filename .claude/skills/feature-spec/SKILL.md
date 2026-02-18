@@ -103,7 +103,7 @@ Brief description of key files (for complex features only):
 
 **Good:** "Lets users manage multiple independent conversations with separate message histories, so they can organize topics without losing context."
 
-**Bad:** "Stores chat objects in a nanostores persistentAtom with CRUD operations and localStorage persistence."
+**Bad:** "Stores chat objects in a Legend-State observable with CRUD operations and localStorage persistence."
 
 ### Scope Section
 

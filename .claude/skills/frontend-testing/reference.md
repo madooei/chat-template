@@ -7,15 +7,33 @@ Complete code examples for every test pattern used in this project.
 ```typescript
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { setPersistentEngine } from "@nanostores/persistent";
 import { afterEach, vi } from "vitest";
 
-export const testStorage: Record<string, string> = {};
-
-setPersistentEngine(testStorage, {
-  addEventListener() {},
-  removeEventListener() {},
-});
+// Full localStorage stub (jsdom's proxy-based storage lacks full Storage API)
+const store: Record<string, string> = {};
+const localStorageStub: Storage = {
+  getItem(key: string) {
+    return key in store ? store[key] : null;
+  },
+  setItem(key: string, value: string) {
+    store[key] = String(value);
+  },
+  removeItem(key: string) {
+    delete store[key];
+  },
+  clear() {
+    for (const key of Object.keys(store)) {
+      delete store[key];
+    }
+  },
+  key(index: number) {
+    return Object.keys(store)[index] ?? null;
+  },
+  get length() {
+    return Object.keys(store).length;
+  },
+};
+vi.stubGlobal("localStorage", localStorageStub);
 
 class ResizeObserverStub {
   observe() {}
@@ -39,9 +57,7 @@ vi.stubGlobal(
 
 afterEach(() => {
   cleanup();
-  for (const key of Object.keys(testStorage)) {
-    delete testStorage[key];
-  }
+  localStorage.clear();
   uuidCounter = 0;
 });
 ```
@@ -78,7 +94,6 @@ export function createTestMessage(
 ## Store Test Pattern
 
 ```typescript
-import { testStorage } from "@/test/setup";
 import { $chats, addChat, updateChat, removeChat, clearChats } from "../chat";
 import { createTestChat } from "@/test/helpers";
 import { chatSchema } from "@/chats/types/chat";
@@ -104,29 +119,25 @@ describe("chat store", () => {
   });
 
   it("Zod decode filters invalid items", () => {
-    function decodeChats(value: string) {
-      try {
-        const parsed = JSON.parse(value);
-        if (!Array.isArray(parsed)) return [];
-        return parsed.reduce<unknown[]>((acc, item) => {
-          const result = chatSchema.safeParse(item);
-          if (result.success) acc.push(result.data);
-          return acc;
-        }, []);
-      } catch {
-        return [];
-      }
+    function decodeChats(value: unknown) {
+      if (!Array.isArray(value)) return [];
+      return value.reduce<unknown[]>((acc, item) => {
+        const result = chatSchema.safeParse(item);
+        if (result.success) acc.push(result.data);
+        return acc;
+      }, []);
     }
-    const raw = JSON.stringify([
+    const raw = [
       createTestChat({ _id: "c1", title: "Valid" }),
       { _id: "c2" }, // missing title
-    ]);
+    ];
     expect(decodeChats(raw)).toHaveLength(1);
   });
 
   it("persistence roundtrip", () => {
     addChat(createTestChat({ _id: "c1", title: "Persisted" }));
-    const parsed = JSON.parse(testStorage["chats"]);
+    const raw = localStorage.getItem("chats");
+    const parsed = JSON.parse(raw!);
     expect(parsed[0].title).toBe("Persisted");
   });
 });
@@ -365,8 +376,9 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-vi.mock("@/app/router", () => ({
-  $router: { open: vi.fn() },
+const mockSetLocation = vi.fn();
+vi.mock("wouter", () => ({
+  useLocation: () => ["/", mockSetLocation],
 }));
 
 vi.mock("@/layout/sidebar-context", () => ({

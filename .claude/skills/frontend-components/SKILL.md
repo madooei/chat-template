@@ -119,7 +119,7 @@ The theme system uses CSS variables + a `dark` class on `<html>`. Three modes: `
 
 ### How It Works
 
-1. **`src/store/theme.ts`** — `persistentAtom` stores the user's choice
+1. **`src/store/theme.ts`** — Legend-State observable stores the user's choice
 2. **`src/hooks/use-theme.tsx`** — `useTheme()` hook exposes `{ theme, setTheme }`
 3. **`src/App.tsx`** — `useEffect` applies the correct class to `<html>`
 4. **`src/styles/index.css`** — CSS variables for `:root` (light) and `.dark` (dark)

@@ -1,13 +1,13 @@
 # State Reference
 
-## Plain Atom
+## Plain Observable
 
 For global state that doesn't need to survive a page refresh:
 
 ```typescript
-import { atom } from "nanostores";
+import { observable } from "@legendapp/state";
 
-export const $sidebarOpen = atom(false);
+export const $sidebarOpen = observable(false);
 ```
 
 ---
@@ -29,41 +29,18 @@ Some stores add feature-specific functions like `removeMessagesByChatId` for cas
 
 ## Computed Values
 
-Derive new values from existing atoms:
+Derive new values from existing observables using function syntax:
 
 ```typescript
-import { computed } from "nanostores";
+import { observable } from "@legendapp/state";
 import { $messages } from "./message";
 
-export const $messageCount = computed($messages, (messages) => messages.length);
+export const $messageCount = observable(() => $messages.get().length);
 
-export const $hasMessages = computed(
-  $messages,
-  (messages) => messages.length > 0,
-);
+export const $hasMessages = observable(() => $messages.get().length > 0);
 ```
 
-Computed atoms update automatically when their source atoms change.
-
----
-
-## Debug Logging
-
-Use `@nanostores/logger` behind a `DEBUG` flag:
-
-```typescript
-import { logger } from "@nanostores/logger";
-
-const DEBUG = false;
-
-// ... atom and functions ...
-
-if (DEBUG) {
-  logger({ $chats });
-}
-```
-
-Set `DEBUG = true` during development. Set back to `false` before committing.
+Computed observables update automatically when their source observables change.
 
 ---
 
@@ -71,45 +48,32 @@ Set `DEBUG = true` during development. Set back to `false` before committing.
 
 ```typescript
 // 1. Imports
-import { persistentAtom } from "@nanostores/persistent";
-import { logger } from "@nanostores/logger";
+import { createPersistedObservable } from "@/store/persisted-observable";
 import { entitySchema, type EntityType } from "../types/entity";
 
-// 2. Debug flag
-const DEBUG = false;
-
-// 3. Safe decoder (never use raw JSON.parse)
-function decodeEntities(value: string): EntityType[] {
-  try {
-    const parsed = JSON.parse(value);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.reduce<EntityType[]>((acc, item) => {
-      const result = entitySchema.safeParse(item);
-      if (result.success) acc.push(result.data);
-      return acc;
-    }, []);
-  } catch {
-    return [];
-  }
+// 2. Safe decoder (never skip validation)
+function decodeEntities(value: unknown): EntityType[] {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<EntityType[]>((acc, item) => {
+    const result = entitySchema.safeParse(item);
+    if (result.success) acc.push(result.data);
+    return acc;
+  }, []);
 }
 
-// 4. Atom definition
-export const $entities = persistentAtom<EntityType[]>("entities", [], {
-  encode: JSON.stringify,
-  decode: decodeEntities,
-});
+// 3. Observable definition
+export const $entities = createPersistedObservable<EntityType[]>(
+  "entities",
+  [],
+  decodeEntities,
+);
 
-// 5. CRUD functions
+// 4. CRUD functions
 export function addEntity(entity: EntityType) { ... }
 export function updateEntity(entity: EntityType) { ... }
 export function removeEntity(id: string) { ... }
 export function clearEntities() { ... }
 
-// 6. Feature-specific functions (if any)
+// 5. Feature-specific functions (if any)
 export function removeEntitiesByParentId(parentId: string) { ... }
-
-// 7. Debug logging (last)
-if (DEBUG) {
-  logger({ $entities });
-}
 ```
