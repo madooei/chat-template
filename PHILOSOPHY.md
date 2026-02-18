@@ -32,22 +32,26 @@ Fast, minimal config, just works. ESLint + Prettier are non-negotiable hygiene �
 
 This is pragmatic, not tribal. React has the largest corpus of training data for AI models, period. Claude generates better React than anything else because it's seen more of it. The job market is still dominated by React. And despite the server components mess, the core mental model (components, props, hooks) has been stable since 2019. You don't have to use the new stuff.
 
-### No Frameworks (No Next, No Astro, No Remix)
+### No Frameworks (No Next, No TanStack Start, No Remix, No Astro, ...)
 
 This is the key philosophical choice. Frameworks are opinions about your entire architecture. Next.js in particular has become a moving target — App Router vs Pages Router, server components, server actions, caching behaviors that change between minor versions. It's maddening.
 
 But more importantly: **a framework couples your frontend to deployment and backend assumptions**. This template is Act 1 of a 3-act play. If you start with Next, you've already made backend decisions. Plain Vite + React is a blank canvas — it builds to static files, runs anywhere, and imposes nothing about where data comes from.
 
-### Nanostores over React Query / React Router / Zustand / Redux
+### Legend-State over Tanstack (React) Query / Zustand / Redux
 
-This is the most interesting choice. Nanostores is:
+This is the most interesting choice. Legend-State is:
 
-- **Tiny** — the whole thing is ~1KB
+- **Fine-grained** — signals-based reactivity with minimal re-renders
 - **Framework-agnostic** — works with React, Vue, Svelte, vanilla JS
-- **Stable** — the API hasn't meaningfully changed
-- **Composable** — atoms, computed, persistent, router are all separate small packages you opt into
+- **Sync-ready** — built-in persistence, debouncing, retry, and sync engine for local-first patterns
+- **Composable** — observables compose naturally; persistence is opt-in per store
 
-But the real reason is **the abstraction boundary it creates**. The hooks (`useQueryChats`, `useMutationChat`) are a thin layer over the store. Right now the store reads/writes localStorage. In Act 2, you swap the store internals to call a real backend, and the hooks + components don't change. React Query is great, but it assumes a fetch-based data model. Nanostores assumes nothing.
+But the real reason is **the abstraction boundary it creates**. The hooks (`useQueryChats`, `useMutationChat`) are a thin layer over the store. Right now the store reads/writes localStorage. In Act 2, you swap the store internals to use Legend-State's sync engine with a real backend, and the hooks + components don't change. React Query is great, but it assumes a fetch-based data model. Legend-State assumes nothing — and when you need debounced sync, server reconciliation, or optimistic updates, it's already there.
+
+### Wouter over React Router / Tanstack Router
+
+Wouter handles routing — it's ~1.3KB, zero dependencies, and treats routing as state with idiomatic React hooks (`useLocation`, `useRoute`) and JSX components (`<Route>`, `<Switch>`). React Router is the default choice in most React projects, but it's grown into a framework-adjacent tool with loaders, actions, and data APIs that overlap with your state management. Wouter does one thing — match URLs to components — and stays out of the way. For a template that already has Legend-State managing data, a minimal router that doesn't try to own your data layer is the right fit.
 
 ### Tailwind + shadcn
 
@@ -77,7 +81,18 @@ The app is a "bring your own AI" chat UI — users pick a provider, supply their
 - **Swappable** — it's an abstraction layer, not a framework. It doesn't own your state or your UI. If something better comes along, the surface area to replace is small
 - **Teachable** — the mental model is simple: pick a provider, call `streamText`, get back a stream
 
-Critically, it doesn't fight the architecture. The SDK handles the AI provider communication; nanostores and hooks handle the state and UI. Each does its job without stepping on the other.
+Critically, it doesn't fight the architecture. The SDK handles the AI provider communication; Legend-State observables and hooks handle the state and UI. Each does its job without stepping on the other.
+
+### OpenRouter as the Default Provider
+
+Vercel AI SDK gives us provider abstraction. OpenRouter gives us provider _aggregation_. Instead of managing separate API keys for OpenAI, Anthropic, Google, and Meta, students get one key that routes to all of them. This matters for a teaching context:
+
+- **One key, many models** — students sign up once and can experiment with Claude, GPT-4o, Gemini, Llama, and others without juggling multiple accounts and billing setups
+- **Consistent billing** — one dashboard, one credit balance, no surprise charges across five different providers
+- **Low friction** — the biggest barrier to students building with AI is the API key setup. OpenRouter reduces that to a single registration
+- **Model discovery** — students can compare models side-by-side without committing to a provider. Try Claude for reasoning, GPT-4o for general tasks, Llama for cost-sensitive use cases — all through the same endpoint
+
+We pair it with the `@openrouter/ai-sdk-provider` adapter, which plugs directly into Vercel AI SDK's `streamText`. The integration is a single function call — swap the provider argument and everything else stays the same.
 
 ### Vitest + React Testing Library for Unit/Integration Tests
 
@@ -91,7 +106,7 @@ Playwright runs real browser tests. Microsoft-backed, stable, TypeScript-first, 
 
 This template is designed to evolve in four stages:
 
-1. **Act 1 — Frontend only, with AI.** React + Vite + nanostores with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
+1. **Act 1 — Frontend only, with AI.** React + Vite + Legend-State with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
 
 2. **Act 2 — Bring a backend.** Swap the store layer to talk to a real backend (Convex). Because the abstraction boundary is clean, hooks and components don't change. You learn how a reactive backend integrates with a frontend you already understand.
 
