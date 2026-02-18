@@ -79,15 +79,25 @@ The app is a "bring your own AI" chat UI — users pick a provider, supply their
 
 Critically, it doesn't fight the architecture. The SDK handles the AI provider communication; nanostores and hooks handle the state and UI. Each does its job without stepping on the other.
 
-## The Three Acts
+### Vitest + React Testing Library for Unit/Integration Tests
 
-This template is designed to evolve in three stages:
+Vitest is native to Vite — it reuses the same config, aliases, and transforms, so there's zero extra bundler configuration. Its API is Jest-compatible, which means massive AI training data and instant familiarity. React Testing Library tests components through observable behavior (roles, labels, text), not implementation details. Together they cover stores, hooks, and components without needing a real browser.
+
+### Playwright for E2E Tests
+
+Playwright runs real browser tests. Microsoft-backed, stable, TypeScript-first, with an API that reads like English. We use Chromium-only to keep the test matrix simple. Playwright ships with an MCP server and we pair it with three Claude Code agents (planner, generator, healer) so you can describe a user journey in plain English and have the AI write, run, and fix the E2E test — same AI-assisted philosophy as the rest of the stack.
+
+## The Four Acts
+
+This template is designed to evolve in four stages:
 
 1. **Act 1 — Frontend only, with AI.** React + Vite + nanostores with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
 
 2. **Act 2 — Bring a backend.** Swap the store layer to talk to a real backend (Convex). Because the abstraction boundary is clean, hooks and components don't change. You learn how a reactive backend integrates with a frontend you already understand.
 
 3. **Act 3 — Agentic AI.** Integrate an agentic AI framework (Mastra). Act 1 gave you basic chat. Act 2 gave you persistence and a real backend. Now you add tools, memory, and autonomous agent behavior on top of a foundation you fully understand.
+
+4. **Act 4 — Production utilities.** Add the things a real app needs: authentication, rate limiting, error monitoring, and other operational concerns. These are layered on top of a system you already understand end-to-end, so each utility is a focused addition rather than a confusing cross-cutting change.
 
 Each act builds on the last. Nothing gets thrown away.
 
@@ -115,37 +125,6 @@ This template is also designed to be built _with_ AI. We use Claude Code as our 
 2. **Consistency** — They guide the AI to generate code that follows our conventions
 
 When you ask Claude Code to add a feature, the skills ensure it produces code that fits the architecture. When you read the skills, you learn the architecture. Same artifact, two audiences.
-
-## Testing
-
-### Why Vitest
-
-Vitest is native to Vite — it reuses the same config, aliases, and transforms, so there's zero extra bundler configuration. Its API is Jest-compatible, which means massive AI training data and instant familiarity for anyone who's tested JavaScript before. It's ESM-native, fast, and does one thing well: run unit and integration tests.
-
-### Why React Testing Library
-
-React Testing Library tests components the way users use them — through observable behavior, not implementation details. You query by role, label, and text, not by CSS class or component internals. This aligns naturally with the SPEC.md approach where "Key Behaviors" map directly to test cases. It's the de facto standard for React testing.
-
-### Why Playwright
-
-Playwright runs real browser E2E tests. Microsoft-backed, stable, TypeScript-first, with an API that reads like English (`page.click`, `expect(page).toHaveURL`). Good CLI and MCP integration for AI-assisted development. We use Chromium-only to keep the test matrix simple.
-
-### The Testing Pyramid
-
-The pyramid maps directly to the architecture:
-
-| Layer          | Tool                                | What you test                                                                   |
-| -------------- | ----------------------------------- | ------------------------------------------------------------------------------- |
-| **Stores**     | Vitest                              | Pure function logic — add, remove, update, Zod decode safety                    |
-| **Hooks**      | Vitest + `renderHook`               | React integration — query hooks return store data, mutation hooks modify stores |
-| **Components** | Vitest + RTL `render` + `userEvent` | User interactions — click, type, submit, conditional rendering                  |
-| **E2E**        | Playwright                          | Full browser journeys — create chat, send message, change settings              |
-
-Each layer tests different concerns. Stores are pure functions (no React). Hooks need `renderHook` but no DOM. Components need a DOM but no real browser. E2E needs a real browser but tests the whole system.
-
-### What We Don't Test
-
-Third-party code. We own the shadcn and prompt-kit files (they live in `src/components/`), but they're copies of upstream libraries. We test _our usage_ of these components — that our props work, our callbacks fire, our composition renders — not the internals of Radix UI or prompt-kit itself.
 
 ## The Guiding Heuristic
 
