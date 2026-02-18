@@ -30,3 +30,9 @@ dist-ssr
 # Test artifacts
 playwright-report/
 test-results/
+
+# OS files
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json
