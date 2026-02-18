@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO: Set up your language/runtime
+      # Examples:
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.12'
+
+      # TODO: Install dependencies
+      # - run: npm install
+      # - run: pip install -r requirements.txt
+
+      # TODO: Run linter
+      # - run: npm run lint
+      # - run: ruff check .
+
+      # TODO: Run tests
+      # - run: npm test
+      # - run: pytest

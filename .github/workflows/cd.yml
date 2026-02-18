@@ -1,0 +1,37 @@
+name: CD
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO: Set up your language/runtime
+      # Examples:
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.12'
+
+      # TODO: Install dependencies
+      # - run: npm install
+      # - run: pip install -r requirements.txt
+
+      # TODO: Build for production
+      # - run: npm run build
+      # - run: python -m build
+
+      # TODO: Deploy to your hosting platform
+      # Examples:
+      # - uses: azure/webapps-deploy@v3
+      #   with:
+      #     app-name: '<your-app-name>'
+      # - uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
