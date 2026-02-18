@@ -1,4 +1,4 @@
-# Technology Philosophy
+# Technology Decisions
 
 This document explains _why_ we chose every piece of this stack. Not just what we use, but the reasoning behind it. If you understand the philosophy, you can make good decisions when extending or adapting this template.
 
@@ -14,7 +14,40 @@ We're optimizing for a sweet spot between three tensions:
 - **Stable enough** that the ground doesn't shift under your feet every 6 months
 - **Simple enough** that both students and AI can reason about the whole system
 
-## The Stack, and Why
+## Development Tooling, and Why
+
+### Claude Code as the Development Agent
+
+This template is designed to be built _with_ AI, not just _for_ AI. Claude Code is an agentic coding tool that lives in the terminal, reads your codebase, and makes changes across files. We chose it over alternatives (Copilot, Cursor, Windsurf, etc.) for a specific reason: **it's the only tool where you can encode project conventions as executable knowledge**.
+
+The `.claude/rules/` directory contains constraints (branch naming, commit format, PR conventions) that Claude Code follows automatically. The `.claude/skills/` directory contains deeper patterns (how to create a feature module, how to write tests, how to structure state) that Claude Code consults when generating code. This means the AI doesn't just autocomplete — it understands the architecture and produces code that fits.
+
+For a collaborative course project, this solves a real problem: consistency across team members. Every student's AI assistant follows the same conventions, generates the same patterns, and references the same architectural decisions. The skills also serve as teaching material — reading them teaches you the "why" behind each pattern.
+
+### GitHub for Collaboration (Issues, PRs, Actions)
+
+GitHub is the platform for version control, project management, and CI/CD. This is pragmatic:
+
+- **Issues as the task system** — GitHub Issues with labels (`feature`, `bug`, `task`), milestones, and templates give structure to collaborative work without introducing a separate tool. The `.github/ISSUE_TEMPLATE/` directory provides templates for features, bugs, tasks, and retrospectives so every issue follows a consistent format.
+- **Pull requests as the review gate** — PRs enforce code review before merging to `master`. The `.github/PULL_REQUEST_TEMPLATE.md` standardizes what reviewers need to see. Branch protection rules prevent direct pushes.
+- **Actions for CI/CD** — GitHub Actions runs type-checking, linting, and tests on every PR (CI), and builds + deploys on every merge to `master` (CD). It's integrated into the same platform where code lives — no separate Jenkins, CircleCI, or Travis setup. The free tier is generous enough for course projects.
+- **Ubiquity** — every developer will encounter GitHub professionally. Learning its workflow (branch, commit, PR, review, merge) is transferable knowledge. Claude Code's `gh` CLI integration means the AI can create issues, open PRs, and check CI status without leaving the terminal.
+
+The GitHub CLI (`gh`) is a prerequisite for this project. It allows Claude Code's skills to automate issue creation, PR workflows, and milestone management directly from the command line.
+
+### Netlify for Deployment
+
+The app builds to static files (`dist/`), so it needs a static hosting platform. Netlify fits because:
+
+- **Zero config for static sites** — point it at a `dist/` folder and it works. No Dockerfile, no server configuration, no infrastructure to manage.
+- **SPA support** — a single `_redirects` file handles client-side routing. Without this, refreshing on `/settings` would 404. Netlify makes this a one-line fix.
+- **GitHub Actions integration** — the `nwtgck/actions-netlify` action deploys in one step. Two secrets (`NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) and you're done.
+- **Free tier** — more than sufficient for course projects. No credit card required for basic hosting.
+- **Preview deploys** — PRs can get their own deploy preview URLs, so reviewers can test changes in a real browser before merging (optional, not enabled by default).
+
+We deliberately keep deployment simple in Phase 1. The CD workflow is ~30 lines of YAML. In Phase 2, when a backend (Convex) enters the picture, the build step adds a Convex deploy command — but the Netlify deployment itself stays the same.
+
+## The App Stack, and Why
 
 ### TypeScript over JavaScript
 
@@ -136,12 +169,7 @@ Each layer only talks to the one below it. Swap the store, everything above stil
 
 ## AI-Assisted Development
 
-This template is also designed to be built _with_ AI. We use Claude Code as our coding agent, with skills that encode these patterns. The skills serve two purposes:
-
-1. **Teaching** — They explain _why_ we do things a certain way, so you learn the reasoning
-2. **Consistency** — They guide the AI to generate code that follows our conventions
-
-When you ask Claude Code to add a feature, the skills ensure it produces code that fits the architecture. When you read the skills, you learn the architecture. Same artifact, two audiences.
+As described in the [Claude Code](#claude-code-as-the-development-agent) section, this template is built _with_ AI. The skills in `.claude/skills/` serve two audiences: they guide Claude Code to generate consistent code, and they teach students the reasoning behind each pattern. Same artifact, two purposes.
 
 ## The Guiding Heuristic
 
