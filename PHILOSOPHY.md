@@ -102,9 +102,11 @@ Vitest is native to Vite — it reuses the same config, aliases, and transforms,
 
 Playwright runs real browser tests. Microsoft-backed, stable, TypeScript-first, with an API that reads like English. We use Chromium-only to keep the test matrix simple. Playwright ships with an MCP server and we pair it with three Claude Code agents (planner, generator, healer) so you can describe a user journey in plain English and have the AI write, run, and fix the E2E test — same AI-assisted philosophy as the rest of the stack.
 
-## The Four Phases
+## The Phases
 
-This template is designed to evolve in four phases:
+This template is designed to evolve in phases:
+
+0. **Phase 0 — Project scaffolding.** A minimal repo with no tech stack decisions. It provides Claude Code rules and skills for collaborative software development — branch naming, commit conventions, PR workflows, iteration planning, retrospectives, and GitHub issue/PR templates. If you want to use your own stack, start here and build on top of it. Phase 0 is the foundation every other phase inherits.
 
 1. **Phase 1 — Frontend only, with AI.** React + Vite + Legend-State with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
 
