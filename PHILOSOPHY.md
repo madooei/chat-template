@@ -36,7 +36,7 @@ This is pragmatic, not tribal. React has the largest corpus of training data for
 
 This is the key philosophical choice. Frameworks are opinions about your entire architecture. Next.js in particular has become a moving target — App Router vs Pages Router, server components, server actions, caching behaviors that change between minor versions. It's maddening.
 
-But more importantly: **a framework couples your frontend to deployment and backend assumptions**. This template is Act 1 of a 3-act play. If you start with Next, you've already made backend decisions. Plain Vite + React is a blank canvas — it builds to static files, runs anywhere, and imposes nothing about where data comes from.
+But more importantly: **a framework couples your frontend to deployment and backend assumptions**. This template is Phase 1 of a 4-phase progression. If you start with Next, you've already made backend decisions. Plain Vite + React is a blank canvas — it builds to static files, runs anywhere, and imposes nothing about where data comes from.
 
 ### Legend-State over Tanstack (React) Query / Zustand / Redux
 
@@ -47,7 +47,7 @@ This is the most interesting choice. Legend-State is:
 - **Sync-ready** — built-in persistence, debouncing, retry, and sync engine for local-first patterns
 - **Composable** — observables compose naturally; persistence is opt-in per store
 
-But the real reason is **the abstraction boundary it creates**. The hooks (`useQueryChats`, `useMutationChat`) are a thin layer over the store. Right now the store reads/writes localStorage. In Act 2, you swap the store internals to use Legend-State's sync engine with a real backend, and the hooks + components don't change. React Query is great, but it assumes a fetch-based data model. Legend-State assumes nothing — and when you need debounced sync, server reconciliation, or optimistic updates, it's already there.
+But the real reason is **the abstraction boundary it creates**. The hooks (`useQueryChats`, `useMutationChat`) are a thin layer over the store. Right now the store reads/writes localStorage. In Phase 2, you swap the store internals to use Legend-State's sync engine with a real backend, and the hooks + components don't change. React Query is great, but it assumes a fetch-based data model. Legend-State assumes nothing — and when you need debounced sync, server reconciliation, or optimistic updates, it's already there.
 
 ### Wouter over React Router / Tanstack Router
 
@@ -102,19 +102,19 @@ Vitest is native to Vite — it reuses the same config, aliases, and transforms,
 
 Playwright runs real browser tests. Microsoft-backed, stable, TypeScript-first, with an API that reads like English. We use Chromium-only to keep the test matrix simple. Playwright ships with an MCP server and we pair it with three Claude Code agents (planner, generator, healer) so you can describe a user journey in plain English and have the AI write, run, and fix the E2E test — same AI-assisted philosophy as the rest of the stack.
 
-## The Four Acts
+## The Four Phases
 
-This template is designed to evolve in four stages:
+This template is designed to evolve in four phases:
 
-1. **Act 1 — Frontend only, with AI.** React + Vite + Legend-State with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
+1. **Phase 1 — Frontend only, with AI.** React + Vite + Legend-State with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
 
-2. **Act 2 — Bring a backend.** Swap the store layer to talk to a real backend (Convex). Because the abstraction boundary is clean, hooks and components don't change. You learn how a reactive backend integrates with a frontend you already understand.
+2. **Phase 2 — Bring a backend.** Swap the store layer to talk to a real backend (Convex). Because the abstraction boundary is clean, hooks and components don't change. You learn how a reactive backend integrates with a frontend you already understand.
 
-3. **Act 3 — Agentic AI.** Integrate an agentic AI framework (Mastra). Act 1 gave you basic chat. Act 2 gave you persistence and a real backend. Now you add tools, memory, and autonomous agent behavior on top of a foundation you fully understand.
+3. **Phase 3 — Agentic AI.** Integrate an agentic AI framework (Mastra). Phase 1 gave you basic chat. Phase 2 gave you persistence and a real backend. Now you add tools, memory, and autonomous agent behavior on top of a foundation you fully understand.
 
-4. **Act 4 — Production utilities.** Add the things a real app needs: authentication, rate limiting, error monitoring, and other operational concerns. These are layered on top of a system you already understand end-to-end, so each utility is a focused addition rather than a confusing cross-cutting change.
+4. **Phase 4 — Production utilities.** Add the things a real app needs: authentication, rate limiting, error monitoring, and other operational concerns. These are layered on top of a system you already understand end-to-end, so each utility is a focused addition rather than a confusing cross-cutting change.
 
-Each act builds on the last. Nothing gets thrown away.
+Each phase builds on the last. Nothing gets thrown away.
 
 ## The Design Principle
 
