@@ -2,33 +2,52 @@
 
 ## Project Description
 
-<!-- TODO: Describe your project in 1-2 sentences -->
+A "bring your own API key" AI chat application. Users pick a provider, supply their own key, and chat — all running locally with no backend. Phase 1 of a multi-phase template.
 
 ## Tech Stack
 
-<!-- TODO: List your technologies (e.g., React + Vite, Python + Flask, etc.) -->
+React 19, TypeScript, Vite, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, prompt-kit, Vercel AI SDK, Vitest, Playwright
 
 ## Commands
 
-<!-- TODO: Fill in after choosing your tech stack -->
-
-- Install dependencies: `<command>`
-- Run development server: `<command>`
-- Run tests: `<command>`
-- Run linter: `<command>`
-- Build for production: `<command>`
+- Install dependencies: `pnpm install`
+- Run development server: `pnpm run dev`
+- Run tests: `pnpm run test`
+- Run tests in watch mode: `pnpm run test:watch`
+- Run E2E tests: `pnpm run test:e2e`
+- Run linter: `pnpm run lint`
+- Run formatter: `pnpm run format`
+- Type-check: `pnpm run type-check`
+- Full validation (type-check + lint + test): `pnpm run validate`
+- Build for production: `pnpm run build`
 
 ## Code Style
 
-<!-- TODO: Document your team's style decisions -->
-
-- Formatting: (e.g., Prettier, Black, etc.)
-- Linting: (e.g., ESLint, Ruff, etc.)
-- Naming conventions: (e.g., camelCase for JS, snake_case for Python)
+- Formatting: Prettier
+- Linting: ESLint (with react-hooks and react-refresh plugins)
+- Naming conventions: camelCase for variables/functions, PascalCase for components/types
 
 ## Architecture
 
-<!-- TODO: Describe your project structure -->
+Feature-based modules following a pipeline: `types/ → store/ → hooks/ → components/ → pages/`. Each layer only talks to the one below it.
+
+```plaintext
+src/
+├── store/          # Shared state utilities (persisted observable)
+├── chats/          # Chat feature (types, store, hooks, components, pages)
+├── messages/       # Messages feature (same structure)
+├── settings/       # Settings feature (same structure)
+├── components/     # Shared UI (shadcn, prompt-kit)
+├── layout/         # App shell (header, sidebar)
+├── lib/            # Utilities (AI provider wrapper)
+├── test/           # Test setup and helpers
+└── styles/         # Global CSS
+
+e2e/                # Playwright end-to-end tests
+specs/              # Feature specifications
+guides/             # How-to guides for students
+docs/               # Iteration plans, PRD, team agreement
+```
 
 ## Branch & Commit Conventions
 
@@ -40,8 +59,6 @@
 - Use merge commits (no squash or rebase)
 
 ## Common Mistakes
-
-<!-- TODO: Add patterns your team discovers during development -->
 
 - [ ] Forgetting to reference the issue number in commits
 - [ ] Pushing directly to master instead of creating a PR

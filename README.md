@@ -33,8 +33,8 @@ Each feature follows the pipeline: `types/ → store/ → hooks/ → components/
 
 ## Scripts
 
-| Command               | What it does                                       |
-| --------------------- | -------------------------------------------------- |
+| Command                | What it does                                       |
+| ---------------------- | -------------------------------------------------- |
 | `pnpm run dev`         | Start dev server                                   |
 | `pnpm run build`       | Type-check and build for production                |
 | `pnpm run test`        | Run unit/integration tests (Vitest)                |

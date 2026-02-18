@@ -5,21 +5,28 @@ on:
     branches: [master]
 
 jobs:
-  build-and-test:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # TODO: Set up Node.js
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
+      - name: Install pnpm
+        run: npm install -g pnpm@10
 
-      # TODO: Install dependencies
-      # - run: npm install
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "latest"
+          cache: "pnpm"
 
-      # TODO: Run linter
-      # - run: npm run lint
+      - name: Install dependencies
+        run: pnpm install
 
-      # TODO: Run tests
-      # - run: npm test
+      - name: Type-check
+        run: pnpm run type-check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm run test
