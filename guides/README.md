@@ -9,7 +9,7 @@ Brief "How To" guides that explain both _what_ and _why_ for each topic. Aimed a
 ### TODO
 
 - **Adding a Feature** — the full pipeline from types to pages, how feature modules are structured, where each piece goes
-- **State Management** — nanostores, persistentAtom, Zod decode safety, the store-to-hook boundary that makes Act 2 swappable
+- **State Management** — Legend-State, observable, Zod decode safety, the store-to-hook boundary that makes Act 2 swappable
 - **AI Integration** — Vercel AI SDK, streaming, provider abstraction, how useChat ties it all together
-- **Routing** — @nanostores/router, adding routes, how pages are resolved and rendered
+- **Routing** — Wouter, adding routes, how pages are resolved and rendered
 - **Components & Styling** — shadcn/ui, prompt-kit, Tailwind, theming, dark mode, the cn() utility

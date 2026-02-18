@@ -11,7 +11,7 @@ These are the fast tests. They run without a real browser — Vitest uses **jsdo
 1. You run `npm run test`
 2. Vitest reads `vitest.config.ts`, which merges the existing Vite config (so path aliases like `@/` just work) and sets jsdom as the environment
 3. Before any test runs, `src/test/setup.ts` patches the fake environment:
-   - Replaces localStorage with a plain object (jsdom's version is buggy with nanostores)
+   - Stubs localStorage with a full Storage implementation (jsdom's proxy-based version doesn't support all methods)
    - Stubs `ResizeObserver` (jsdom doesn't have it, but Radix UI needs it)
    - Makes `crypto.randomUUID()` return predictable values like `test-uuid-1`, `test-uuid-2`
 4. After each test, setup cleans up — clears React, empties storage, resets UUIDs. Every test starts fresh.
