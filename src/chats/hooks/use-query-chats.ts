@@ -1,9 +1,9 @@
 import type { ChatType } from "@/chats/types/chat";
-import { useStore } from "@nanostores/react";
+import { useSelector } from "@legendapp/state/react";
 import { $chats } from "@/chats/store/chat";
 
 export function useQueryChats() {
-  const chats = useStore($chats);
+  const chats = useSelector(() => $chats.get());
 
   return {
     data: chats as ChatType[],

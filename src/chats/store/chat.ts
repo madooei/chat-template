@@ -1,31 +1,26 @@
-import { logger } from "@nanostores/logger";
-import { persistentAtom } from "@nanostores/persistent";
+import { createPersistedIdbObservable } from "@/store/persisted-idb-observable";
 import { chatSchema, type ChatType } from "@/chats/types/chat";
 
-const DEBUG = false;
+export function decodeChats(value: unknown): ChatType[] {
+  if (!Array.isArray(value)) return [];
 
-export function decodeChats(value: string): ChatType[] {
-  try {
-    const parsed = JSON.parse(value);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.reduce<ChatType[]>((acc, item) => {
-      const result = chatSchema.safeParse(item);
-      if (result.success) {
-        acc.push(result.data);
-      }
-      return acc;
-    }, []);
-  } catch {
-    // Fallback to empty list for malformed localStorage values.
-    return [];
-  }
+  return value.reduce<ChatType[]>((acc, item) => {
+    const result = chatSchema.safeParse(item);
+    if (result.success) {
+      acc.push(result.data);
+    }
+    return acc;
+  }, []);
 }
 
-export const $chats = persistentAtom<ChatType[]>("chats", [], {
-  encode: JSON.stringify,
-  decode: decodeChats,
-});
+const { obs, hydrated } = createPersistedIdbObservable<ChatType[]>(
+  "chats",
+  "data",
+  [],
+  decodeChats,
+);
+export const $chats = obs;
+export const chatsHydrated = hydrated;
 
 export function addChat(newChat: ChatType) {
   $chats.set([...$chats.get(), newChat]);
@@ -49,8 +44,4 @@ export function removeChat(chatId: string) {
 
 export function clearChats() {
   $chats.set([]);
-}
-
-if (DEBUG) {
-  logger({ $chats });
 }

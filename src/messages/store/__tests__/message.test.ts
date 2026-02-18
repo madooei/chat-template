@@ -1,4 +1,3 @@
-import { testStorage } from "@/test/setup";
 import {
   $messages,
   addMessage,
@@ -8,6 +7,7 @@ import {
   clearMessages,
   decodeMessages,
 } from "../message";
+import { idbGet } from "@/store/idb";
 import { createTestMessage } from "@/test/helpers";
 
 beforeEach(() => {
@@ -67,8 +67,8 @@ describe("message store", () => {
   });
 
   describe("Zod decode safety", () => {
-    it("returns empty array for malformed JSON", () => {
-      expect(decodeMessages("not-json")).toEqual([]);
+    it("returns empty array for non-array input", () => {
+      expect(decodeMessages("not-an-array")).toEqual([]);
     });
 
     it("filters out invalid items", () => {
@@ -78,27 +78,28 @@ describe("message store", () => {
         role: "user",
         content: "Hi",
       });
-      const raw = JSON.stringify([
+      const input = [
         validMsg,
         { _id: "m2" }, // missing fields
         "not-an-object",
-      ]);
+      ];
 
-      const result = decodeMessages(raw);
+      const result = decodeMessages(input);
       expect(result).toHaveLength(1);
       expect(result[0]._id).toBe("m1");
     });
   });
 
-  it("persistence roundtrip", () => {
+  it("persistence roundtrip", async () => {
     const msg = createTestMessage({ _id: "m1", content: "Persisted" });
     addMessage(msg);
 
-    const stored = testStorage["messages"];
-    expect(stored).toBeTruthy();
+    // Let the fire-and-forget idbPut settle
+    await new Promise((r) => setTimeout(r, 0));
 
-    const parsed = JSON.parse(stored);
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].content).toBe("Persisted");
+    const stored = await idbGet<unknown[]>("messages", "data");
+    expect(stored).toBeTruthy();
+    expect(stored).toHaveLength(1);
+    expect((stored![0] as { content: string }).content).toBe("Persisted");
   });
 });

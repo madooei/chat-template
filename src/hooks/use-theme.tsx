@@ -1,8 +1,8 @@
 import { $theme, setTheme } from "@/store/theme";
-import { useStore } from "@nanostores/react";
+import { useSelector } from "@legendapp/state/react";
 
 export const useTheme = () => {
-  const theme = useStore($theme);
+  const theme = useSelector($theme);
 
   return {
     theme,

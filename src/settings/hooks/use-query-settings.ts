@@ -1,8 +1,8 @@
-import { useStore } from "@nanostores/react";
+import { useSelector } from "@legendapp/state/react";
 import { $settings } from "@/settings/store/settings";
 
 export function useQuerySettings() {
-  const settings = useStore($settings);
+  const settings = useSelector($settings);
 
   return {
     data: settings,

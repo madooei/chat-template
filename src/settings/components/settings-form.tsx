@@ -13,18 +13,20 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
   onSubmit,
 }) => {
   const [displayName, setDisplayName] = useState(initialValues.displayName);
-  const [geminiApiKey, setGeminiApiKey] = useState(initialValues.geminiApiKey);
+  const [openRouterApiKey, setOpenRouterApiKey] = useState(
+    initialValues.openRouterApiKey,
+  );
   const [showApiKey, setShowApiKey] = useState(false);
 
   const hasChanges =
     displayName !== initialValues.displayName ||
-    geminiApiKey !== initialValues.geminiApiKey;
+    openRouterApiKey !== initialValues.openRouterApiKey;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       displayName: displayName.trim(),
-      geminiApiKey: geminiApiKey.trim(),
+      openRouterApiKey: openRouterApiKey.trim(),
     });
   };
 
@@ -45,16 +47,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="geminiApiKey" className="text-sm font-medium">
-          Gemini API Key
+        <label htmlFor="openRouterApiKey" className="text-sm font-medium">
+          OpenRouter API Key
         </label>
         <div className="relative">
           <input
-            id="geminiApiKey"
+            id="openRouterApiKey"
             type={showApiKey ? "text" : "password"}
-            value={geminiApiKey}
-            onChange={(e) => setGeminiApiKey(e.target.value)}
-            placeholder="Enter your Gemini API key"
+            value={openRouterApiKey}
+            onChange={(e) => setOpenRouterApiKey(e.target.value)}
+            placeholder="Enter your OpenRouter API key"
             className="w-full rounded-md border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <Button

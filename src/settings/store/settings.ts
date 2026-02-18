@@ -1,35 +1,23 @@
-import { logger } from "@nanostores/logger";
-import { persistentAtom } from "@nanostores/persistent";
+import { createPersistedObservable } from "@/store/persisted-observable";
 import { settingsSchema, type SettingsType } from "@/settings/types/settings";
-
-const DEBUG = false;
 
 const defaultSettings: SettingsType = {
   displayName: "",
-  geminiApiKey: "",
+  openRouterApiKey: "",
 };
 
-export function decodeSettings(value: string): SettingsType {
-  try {
-    const parsed = JSON.parse(value);
-    const result = settingsSchema.safeParse(parsed);
-    if (result.success) {
-      return result.data;
-    }
-  } catch {
-    // Fallback to defaults for malformed localStorage values.
+export function decodeSettings(value: unknown): SettingsType {
+  const result = settingsSchema.safeParse(value);
+  if (result.success) {
+    return result.data;
   }
-
   return defaultSettings;
 }
 
-export const $settings = persistentAtom<SettingsType>(
+export const $settings = createPersistedObservable<SettingsType>(
   "settings",
   defaultSettings,
-  {
-    encode: JSON.stringify,
-    decode: decodeSettings,
-  },
+  decodeSettings,
 );
 
 export function updateSettings(updates: Partial<SettingsType>) {
@@ -38,8 +26,4 @@ export function updateSettings(updates: Partial<SettingsType>) {
 
 export function getSettings(): SettingsType {
   return $settings.get();
-}
-
-if (DEBUG) {
-  logger({ $settings });
 }

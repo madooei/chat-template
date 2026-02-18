@@ -1,4 +1,3 @@
-import { testStorage } from "@/test/setup";
 import {
   $settings,
   updateSettings,
@@ -7,14 +6,14 @@ import {
 } from "../settings";
 
 beforeEach(() => {
-  $settings.set({ displayName: "", geminiApiKey: "" });
+  $settings.set({ displayName: "", openRouterApiKey: "" });
 });
 
 describe("settings store", () => {
   it("starts with default values", () => {
     const settings = getSettings();
     expect(settings.displayName).toBe("");
-    expect(settings.geminiApiKey).toBe("");
+    expect(settings.openRouterApiKey).toBe("");
   });
 
   it("updateSettings applies partial updates", () => {
@@ -22,15 +21,15 @@ describe("settings store", () => {
 
     const settings = getSettings();
     expect(settings.displayName).toBe("Alice");
-    expect(settings.geminiApiKey).toBe("");
+    expect(settings.openRouterApiKey).toBe("");
   });
 
   it("updateSettings applies multiple fields", () => {
-    updateSettings({ displayName: "Bob", geminiApiKey: "key-123" });
+    updateSettings({ displayName: "Bob", openRouterApiKey: "key-123" });
 
     const settings = getSettings();
     expect(settings.displayName).toBe("Bob");
-    expect(settings.geminiApiKey).toBe("key-123");
+    expect(settings.openRouterApiKey).toBe("key-123");
   });
 
   it("getSettings returns current values", () => {
@@ -39,22 +38,22 @@ describe("settings store", () => {
   });
 
   describe("Zod decode safety", () => {
-    it("returns defaults for malformed JSON", () => {
-      expect(decodeSettings("not-json")).toEqual({
+    it("returns defaults for invalid input", () => {
+      expect(decodeSettings("not-valid")).toEqual({
         displayName: "",
-        geminiApiKey: "",
+        openRouterApiKey: "",
       });
     });
   });
 
   it("persistence roundtrip", () => {
-    updateSettings({ displayName: "Dave", geminiApiKey: "key-abc" });
+    updateSettings({ displayName: "Dave", openRouterApiKey: "key-abc" });
 
-    const stored = testStorage["settings"];
+    const stored = localStorage.getItem("settings");
     expect(stored).toBeTruthy();
 
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(stored!);
     expect(parsed.displayName).toBe("Dave");
-    expect(parsed.geminiApiKey).toBe("key-abc");
+    expect(parsed.openRouterApiKey).toBe("key-abc");
   });
 });

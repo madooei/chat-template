@@ -3,7 +3,7 @@ import { $settings } from "@/settings/store/settings";
 import { useQuerySettings } from "../use-query-settings";
 
 beforeEach(() => {
-  $settings.set({ displayName: "", geminiApiKey: "" });
+  $settings.set({ displayName: "", openRouterApiKey: "" });
 });
 
 describe("useQuerySettings", () => {
@@ -11,16 +11,16 @@ describe("useQuerySettings", () => {
     const { result } = renderHook(() => useQuerySettings());
 
     expect(result.current.data.displayName).toBe("");
-    expect(result.current.data.geminiApiKey).toBe("");
+    expect(result.current.data.openRouterApiKey).toBe("");
     expect(result.current.loading).toBe(false);
   });
 
   it("returns updated values", () => {
-    $settings.set({ displayName: "Alice", geminiApiKey: "key-123" });
+    $settings.set({ displayName: "Alice", openRouterApiKey: "key-123" });
 
     const { result } = renderHook(() => useQuerySettings());
 
     expect(result.current.data.displayName).toBe("Alice");
-    expect(result.current.data.geminiApiKey).toBe("key-123");
+    expect(result.current.data.openRouterApiKey).toBe("key-123");
   });
 });

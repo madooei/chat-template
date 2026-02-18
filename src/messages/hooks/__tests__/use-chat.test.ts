@@ -5,6 +5,7 @@ import { $messages } from "@/messages/store/message";
 import { $settings } from "@/settings/store/settings";
 import { useChat } from "../use-chat";
 import { createTestChat } from "@/test/helpers";
+import { DEFAULT_MODEL } from "@/config/models";
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
@@ -23,32 +24,32 @@ beforeEach(() => {
   vi.clearAllMocks();
   $chats.set([]);
   $messages.set([]);
-  $settings.set({ displayName: "", geminiApiKey: "" });
+  $settings.set({ displayName: "", openRouterApiKey: "" });
 });
 
 describe("useChat", () => {
   it("sendMessage returns false without API key", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "" });
+    $settings.set({ displayName: "", openRouterApiKey: "" });
 
     const { result } = renderHook(() => useChat("chat-1"));
 
     let success = false;
     await act(async () => {
-      success = await result.current.sendMessage("Hello");
+      success = await result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     expect(success).toBe(false);
   });
 
   it("sendMessage adds user message immediately", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "test-key" });
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
     $chats.set([createTestChat({ _id: "chat-1", title: "Test" })]);
     mockStreamChat.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello");
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     const messages = $messages.get();
@@ -59,7 +60,7 @@ describe("useChat", () => {
   });
 
   it("isStreaming is true during stream", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "test-key" });
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
     $chats.set([createTestChat({ _id: "chat-1", title: "Test" })]);
 
     let resolveStream: () => void;
@@ -74,7 +75,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hello");
+      void result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     // isStreaming should be true while stream is in progress
@@ -86,7 +87,7 @@ describe("useChat", () => {
   });
 
   it("streamingContent updates via onChunk", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "test-key" });
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
     $chats.set([createTestChat({ _id: "chat-1", title: "Test" })]);
 
     let capturedOnChunk: ((accumulated: string) => void) | undefined;
@@ -103,7 +104,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hi");
+      void result.current.sendMessage("Hi", DEFAULT_MODEL);
     });
 
     // Simulate chunks arriving during the stream
@@ -123,7 +124,7 @@ describe("useChat", () => {
   });
 
   it("assistant message saved on finish", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "test-key" });
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
     $chats.set([createTestChat({ _id: "chat-1", title: "Test Chat" })]);
 
     mockStreamChat.mockImplementation(async (opts) => {
@@ -134,7 +135,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello");
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     const messages = $messages.get();
@@ -144,7 +145,7 @@ describe("useChat", () => {
   });
 
   it("abort resets state", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "test-key" });
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
     $chats.set([createTestChat({ _id: "chat-1", title: "Test" })]);
 
     let resolveStream: () => void;
@@ -159,7 +160,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hello");
+      void result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     act(() => {
@@ -175,7 +176,7 @@ describe("useChat", () => {
   });
 
   it("auto-title triggers when title is 'New Chat'", async () => {
-    $settings.set({ displayName: "", geminiApiKey: "test-key" });
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
     $chats.set([createTestChat({ _id: "chat-1", title: "New Chat" })]);
     mockGenerateChatTitle.mockResolvedValue("Generated Title");
 
@@ -186,7 +187,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello");
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     // Wait for the title generation promise to resolve

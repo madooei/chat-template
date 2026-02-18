@@ -6,6 +6,33 @@ import { $messages } from "@/messages/store/message";
 import { $chats, updateChat } from "@/chats/store/chat";
 import { streamChat, generateChatTitle } from "@/lib/ai";
 
+function friendlyErrorMessage(err: Error): string {
+  const msg = err.message.toLowerCase();
+  if (
+    msg.includes("api key") ||
+    msg.includes("api_key") ||
+    msg.includes("unauthorized") ||
+    msg.includes("401")
+  ) {
+    return "Your API key is invalid. Please check it in Settings.";
+  }
+  if (
+    msg.includes("quota") ||
+    msg.includes("rate limit") ||
+    msg.includes("429")
+  ) {
+    return "You've hit the API rate limit. Please wait a moment and try again.";
+  }
+  if (
+    msg.includes("network") ||
+    msg.includes("fetch") ||
+    msg.includes("econnrefused")
+  ) {
+    return "Network error. Check your internet connection and try again.";
+  }
+  return "Something went wrong. Please try again.";
+}
+
 export function useChat(chatId: string) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
@@ -23,12 +50,12 @@ export function useChat(chatId: string) {
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string): Promise<boolean> => {
+    async (content: string, model: string): Promise<boolean> => {
       const settings = getSettings();
 
-      if (!settings.geminiApiKey) {
+      if (!settings.openRouterApiKey) {
         toast.error("API key not configured", {
-          description: "Add your Gemini API key in Settings",
+          description: "Add your OpenRouter API key in Settings",
         });
         return false;
       }
@@ -64,7 +91,8 @@ export function useChat(chatId: string) {
       abortControllerRef.current = abortController;
 
       void streamChat({
-        apiKey: settings.geminiApiKey,
+        apiKey: settings.openRouterApiKey,
+        model,
         messages: history,
         abortSignal: abortController.signal,
         onChunk: (accumulated) => {
@@ -100,7 +128,8 @@ export function useChat(chatId: string) {
               .map((m) => ({ role: m.role, content: m.content }));
 
             generateChatTitle({
-              apiKey: settings.geminiApiKey,
+              apiKey: settings.openRouterApiKey,
+              model,
               messages: allMessages,
             }).then((title) => {
               if (requestIdRef.current !== requestId || !title) return;
@@ -118,9 +147,9 @@ export function useChat(chatId: string) {
           setStreamingContent("");
           setIsStreaming(false);
           abortControllerRef.current = null;
-          toast.error("Failed to get response", {
-            description: err.message,
-          });
+          console.error("[useChat] streaming failed:", err);
+          const friendly = friendlyErrorMessage(err);
+          toast.error(friendly, { duration: 8000 });
         },
       });
 

@@ -1,15 +1,16 @@
+import { useLocation } from "wouter";
 import { MessageSquare, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { $router } from "@/app/router";
 import { useMutationChats } from "@/chats/hooks/use-mutation-chats";
 
 const HomeEmptyState: React.FC = () => {
+  const [, setLocation] = useLocation();
   const { add: createChat } = useMutationChats();
 
   const handleNewChat = async () => {
     const chatId = await createChat({ title: "New Chat" });
     if (chatId) {
-      $router.open(`/chats/${chatId}/messages`);
+      setLocation(`/chats/${chatId}/messages`);
     }
   };
 

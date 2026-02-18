@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { $router } from "@/app/router";
 import { useMutationChats } from "@/chats/hooks/use-mutation-chats";
 
 interface AddChatDialogProps {
@@ -21,6 +21,7 @@ const AddChatDialog: React.FC<AddChatDialogProps> = ({
   onOpenChange,
 }) => {
   const [title, setTitle] = useState("");
+  const [, setLocation] = useLocation();
   const { add: createChat } = useMutationChats();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +32,7 @@ const AddChatDialog: React.FC<AddChatDialogProps> = ({
     if (chatId) {
       setTitle("");
       onOpenChange(false);
-      $router.open(`/chats/${chatId}/messages`);
+      setLocation(`/chats/${chatId}/messages`);
     }
   };
 

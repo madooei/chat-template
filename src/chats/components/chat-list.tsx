@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useStore } from "@nanostores/react";
+import { useSelector } from "@legendapp/state/react";
+import { useLocation } from "wouter";
 import { MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,6 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { $chats } from "@/chats/store/chat";
-import { $router } from "@/app/router";
 import type { ChatType } from "@/chats/types/chat";
 import { toast } from "sonner";
 import { removeChat } from "@/chats/store/chat";
@@ -85,7 +85,8 @@ const ChatList: React.FC<ChatListProps> = ({
   searchQuery,
   sortOrder = "desc",
 }) => {
-  const chats = useStore($chats);
+  const chats = useSelector(() => $chats.get());
+  const [, setLocation] = useLocation();
   const [editingChat, setEditingChat] = useState<ChatType | null>(null);
   const { closeSidebar } = useSidebar();
 
@@ -94,7 +95,7 @@ const ChatList: React.FC<ChatListProps> = ({
     removeChat(chatId);
     toast.success("Chat deleted successfully");
     if (chatId === activeChatId) {
-      $router.open("/");
+      setLocation("/");
     }
   };
 
@@ -147,13 +148,13 @@ const ChatList: React.FC<ChatListProps> = ({
                     role="button"
                     tabIndex={0}
                     onClick={() => {
-                      $router.open(`/chats/${chat._id}/messages`);
+                      setLocation(`/chats/${chat._id}/messages`);
                       closeSidebar();
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        $router.open(`/chats/${chat._id}/messages`);
+                        setLocation(`/chats/${chat._id}/messages`);
                         closeSidebar();
                       }
                     }}

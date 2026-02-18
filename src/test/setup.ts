@@ -1,17 +1,35 @@
+import "fake-indexeddb/auto";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { setPersistentEngine } from "@nanostores/persistent";
 import { afterEach, vi } from "vitest";
+import { resetDb } from "@/store/idb";
 
-// Use a plain object as storage engine because jsdom's localStorage
-// proxy doesn't support the bracket-notation assignment that
-// @nanostores/persistent uses internally (storageEngine[key] = value).
-export const testStorage: Record<string, string> = {};
-
-setPersistentEngine(testStorage, {
-  addEventListener() {},
-  removeEventListener() {},
-});
+// Provide a full localStorage implementation because jsdom's proxy-based
+// localStorage doesn't support all Storage methods reliably.
+const store: Record<string, string> = {};
+const localStorageStub: Storage = {
+  getItem(key: string) {
+    return key in store ? store[key] : null;
+  },
+  setItem(key: string, value: string) {
+    store[key] = String(value);
+  },
+  removeItem(key: string) {
+    delete store[key];
+  },
+  clear() {
+    for (const key of Object.keys(store)) {
+      delete store[key];
+    }
+  },
+  key(index: number) {
+    return Object.keys(store)[index] ?? null;
+  },
+  get length() {
+    return Object.keys(store).length;
+  },
+};
+vi.stubGlobal("localStorage", localStorageStub);
 
 // Radix UI uses ResizeObserver which jsdom doesn't provide.
 class ResizeObserverStub {
@@ -35,10 +53,9 @@ vi.stubGlobal(
   }),
 );
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
-  for (const key of Object.keys(testStorage)) {
-    delete testStorage[key];
-  }
+  localStorageStub.clear();
   uuidCounter = 0;
+  await resetDb();
 });

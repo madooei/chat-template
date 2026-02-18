@@ -14,10 +14,10 @@ Enables real-time conversational interaction between the user and an AI assistan
 - Stream assistant responses in real-time with a "Thinking" shimmer indicator
 - Allow the user to abort a streaming response mid-generation
 - Copy any message's text to clipboard
-- Persist all messages to localStorage keyed by chat ID
+- Persist all messages to IndexedDB keyed by chat ID
 - Show an empty state with suggested prompts when a chat has no messages
 - Auto-generate a chat title after the first assistant response in a "New Chat"
-- Validate that a Gemini API key exists before sending requests
+- Validate that a OpenRouter API key exists before sending requests
 - Track request IDs to prevent race conditions from overlapping streams
 - Clean up abort controllers and pending state on component unmount
 
@@ -25,11 +25,11 @@ Enables real-time conversational interaction between the user and an AI assistan
 
 - Manage chat CRUD (creating, renaming, deleting chats) -- owned by `chats` feature
 - Store or manage the API key -- owned by `settings` feature
-- Handle routing or navigation -- owned by `app/router`
+- Handle routing or navigation -- owned by Wouter routes in `App.tsx`
 - Implement model switching (placeholder only)
 - Implement message editing, regeneration, or feedback (placeholders only)
 - Implement file attachments, voice input, or read-aloud (placeholders only)
-- Sync messages to a server or database (localStorage only)
+- Sync messages to a server or database (IndexedDB only)
 
 ## Key Behaviors
 
@@ -39,7 +39,7 @@ Enables real-time conversational interaction between the user and an AI assistan
 4. When streaming starts before any content arrives, a "Thinking" shimmer loader is shown
 5. When streaming content arrives, it renders incrementally as markdown
 6. When streaming completes, the full response is saved as an assistant message
-7. If the Gemini API key is missing, an error toast is shown and no request is sent
+7. If the OpenRouter API key is missing, an error toast is shown and no request is sent
 8. If the chat title is still "New Chat" after the first assistant response, a title is auto-generated from conversation context
 9. When a user hovers over a message on desktop, action buttons fade in; on mobile they are always visible
 10. When the message list is empty, four suggested prompts are shown; clicking one populates the input
@@ -49,10 +49,10 @@ Enables real-time conversational interaction between the user and an AI assistan
 
 - `chats` -- `$chats` store and `updateChat` for auto-titling after first response
 - `chats` -- `useQueryChat` hook to display the chat title in the page header
-- `settings` -- `getSettings()` to retrieve the Gemini API key before sending
-- `app/router` -- `$router` for back-navigation on mobile
-- `lib/ai` -- `streamChat()` and `generateChatTitle()` wrapping Vercel AI SDK with Google provider
-- External: `nanostores` + `@nanostores/react` -- state management and persistence
+- `settings` -- `getSettings()` to retrieve the OpenRouter API key before sending
+- External: `wouter` -- `useLocation` for back-navigation on mobile
+- `lib/ai` -- `streamChat()` and `generateChatTitle()` wrapping Vercel AI SDK with OpenRouter provider
+- External: `@legendapp/state` + `@legendapp/state/react` -- state management and persistence
 - External: `sonner` -- toast notifications
 - External: `lucide-react` -- icons
 - External: `react-markdown` + `shiki` -- markdown rendering with syntax highlighting
@@ -62,10 +62,10 @@ Enables real-time conversational interaction between the user and an AI assistan
 
 - Model selector is a static placeholder; switching models has no effect
 - Message editing, regeneration, feedback (thumbs up/down), read-aloud, file attachment, voice input, and chat export are all unimplemented placeholders
-- No server-side persistence; messages live only in localStorage
+- No server-side persistence; messages live only in IndexedDB
 - Query hooks always return `loading: false` and `error: false` (synchronous reads)
 - No optimistic rollback if streaming fails partway (partial responses are lost)
-- No multi-tab synchronization for localStorage changes
+- No cross-tab synchronization; each tab hydrates from IndexedDB once on load and writes independently, so changes in one tab are not reflected in another
 - Suggested prompts in the empty state are hardcoded
 
 ## Files
@@ -73,7 +73,7 @@ Enables real-time conversational interaction between the user and an AI assistan
 | File                             | Purpose                                              |
 | -------------------------------- | ---------------------------------------------------- |
 | `types/message.ts`               | Zod schemas and TypeScript types for messages        |
-| `store/message.ts`               | Persistent nanostores atom and CRUD operations       |
+| `store/message.ts`               | Legend-State observable with CRUD operations         |
 | `hooks/use-chat.ts`              | Core streaming logic, abort handling, auto-titling   |
 | `hooks/use-query-messages.ts`    | Query messages filtered by chat ID                   |
 | `hooks/use-query-message.ts`     | Query a single message by ID                         |

@@ -8,8 +8,9 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("@/app/router", () => ({
-  $router: { open: vi.fn() },
+const mockSetLocation = vi.fn();
+vi.mock("wouter", () => ({
+  useLocation: () => ["/", mockSetLocation],
 }));
 
 vi.mock("@/layout/sidebar-context", () => ({

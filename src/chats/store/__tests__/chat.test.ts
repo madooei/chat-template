@@ -1,4 +1,3 @@
-import { testStorage } from "@/test/setup";
 import {
   $chats,
   addChat,
@@ -7,6 +6,7 @@ import {
   clearChats,
   decodeChats,
 } from "../chat";
+import { idbGet } from "@/store/idb";
 import { createTestChat } from "@/test/helpers";
 
 beforeEach(() => {
@@ -65,34 +65,35 @@ describe("chat store", () => {
   });
 
   describe("Zod decode safety", () => {
-    it("returns empty array for malformed JSON", () => {
-      expect(decodeChats("not-json")).toEqual([]);
+    it("returns empty array for non-array input", () => {
+      expect(decodeChats("not-an-array")).toEqual([]);
     });
 
     it("filters out invalid items", () => {
       const validChat = createTestChat({ _id: "c1", title: "Valid" });
-      const raw = JSON.stringify([
+      const input = [
         validChat,
         { _id: "c2" }, // missing title
         { title: "No ID" }, // missing _id
         "not-an-object",
-      ]);
+      ];
 
-      const result = decodeChats(raw);
+      const result = decodeChats(input);
       expect(result).toHaveLength(1);
       expect(result[0]._id).toBe("c1");
     });
   });
 
-  it("persistence roundtrip", () => {
+  it("persistence roundtrip", async () => {
     const chat = createTestChat({ _id: "c1", title: "Persisted" });
     addChat(chat);
 
-    const stored = testStorage["chats"];
-    expect(stored).toBeTruthy();
+    // Let the fire-and-forget idbPut settle
+    await new Promise((r) => setTimeout(r, 0));
 
-    const parsed = JSON.parse(stored);
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].title).toBe("Persisted");
+    const stored = await idbGet<unknown[]>("chats", "data");
+    expect(stored).toBeTruthy();
+    expect(stored).toHaveLength(1);
+    expect((stored![0] as { title: string }).title).toBe("Persisted");
   });
 });

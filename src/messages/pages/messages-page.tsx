@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronDown, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,15 +18,9 @@ import { ScrollButton } from "@/components/prompt-kit/scroll-button";
 import { useQueryChat } from "@/chats/hooks/use-query-chat";
 import { useQueryMessages } from "@/messages/hooks/use-query-messages";
 import { useChat } from "@/messages/hooks/use-chat";
-import { $router } from "@/app/router";
 import MessageList from "@/messages/components/message-list";
 import MessageInput from "@/messages/components/message-input";
-
-const MODELS = [
-  { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash", active: true },
-  { id: "gpt-4o", label: "GPT-4o", active: false },
-  { id: "claude-sonnet-4-5", label: "Claude Sonnet 4.5", active: false },
-];
+import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/config/models";
 
 interface MessagesPageProps {
   chatId: string;
@@ -35,10 +30,14 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   const { data: chat } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
   const { sendMessage, isStreaming, streamingContent, abort } = useChat(chatId);
+  const [model, setModel] = useState(DEFAULT_MODEL);
   const [inputValue, setInputValue] = useState("");
+  const [, setLocation] = useLocation();
+
+  const activeModel = AVAILABLE_MODELS.find((m) => m.id === model);
 
   const handleSend = async (content: string) => {
-    const accepted = await sendMessage(content);
+    const accepted = await sendMessage(content, model);
     if (accepted) {
       setInputValue("");
     }
@@ -58,7 +57,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
             variant="ghost"
             size="icon"
             className="md:hidden h-8 w-8 flex-shrink-0"
-            onClick={() => $router.open("/")}
+            onClick={() => setLocation("/")}
             aria-label="Back to chats"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -69,22 +68,15 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-1">
-                {MODELS.find((m) => m.active)?.label}
+                {activeModel?.label ?? model}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {MODELS.map((model) => (
-                <DropdownMenuItem
-                  key={model.id}
-                  onClick={() => {
-                    if (!model.active) {
-                      toast.info("Model switching is not implemented yet");
-                    }
-                  }}
-                >
-                  {model.label}
-                  {model.active && (
+              {AVAILABLE_MODELS.map((m) => (
+                <DropdownMenuItem key={m.id} onClick={() => setModel(m.id)}>
+                  {m.label}
+                  {m.id === model && (
                     <span className="ml-auto text-xs text-muted-foreground">
                       active
                     </span>

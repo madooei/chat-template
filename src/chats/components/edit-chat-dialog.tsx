@@ -14,6 +14,7 @@ import { useMutationChat } from "@/chats/hooks/use-mutation-chat";
 import { $messages } from "@/messages/store/message";
 import { getSettings } from "@/settings/store/settings";
 import { generateChatTitle } from "@/lib/ai";
+import { DEFAULT_MODEL } from "@/config/models";
 
 interface EditChatDialogProps {
   chat: ChatType;
@@ -32,7 +33,7 @@ const EditChatDialog: React.FC<EditChatDialogProps> = ({
 
   const settings = getSettings();
   const chatMessages = $messages.get().filter((m) => m.chatId === chat._id);
-  const canSuggest = chatMessages.length > 0 && !!settings.geminiApiKey;
+  const canSuggest = chatMessages.length > 0 && !!settings.openRouterApiKey;
 
   const handleSuggestTitle = async () => {
     setIsSuggesting(true);
@@ -41,7 +42,8 @@ const EditChatDialog: React.FC<EditChatDialogProps> = ({
       content: m.content,
     }));
     const suggested = await generateChatTitle({
-      apiKey: settings.geminiApiKey,
+      apiKey: settings.openRouterApiKey,
+      model: DEFAULT_MODEL,
       messages,
     });
     if (suggested) {

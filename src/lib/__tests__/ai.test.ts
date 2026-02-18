@@ -6,8 +6,8 @@ vi.mock("ai", () => ({
   streamText: vi.fn(),
 }));
 
-vi.mock("@ai-sdk/google", () => ({
-  createGoogleGenerativeAI: vi.fn(() => vi.fn()),
+vi.mock("@openrouter/ai-sdk-provider", () => ({
+  createOpenRouter: vi.fn(() => ({ chat: vi.fn() })),
 }));
 
 const { streamText } = await import("ai");
@@ -35,6 +35,7 @@ describe("generateChatTitle", () => {
 
     const title = await generateChatTitle({
       apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
       messages: [{ role: "user", content: "Hi" }],
     });
 
@@ -48,6 +49,7 @@ describe("generateChatTitle", () => {
 
     const title = await generateChatTitle({
       apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
       messages: [{ role: "user", content: "Hi" }],
     });
 
@@ -64,7 +66,11 @@ describe("generateChatTitle", () => {
       content: `Message ${i}`,
     }));
 
-    await generateChatTitle({ apiKey: "test-key", messages });
+    await generateChatTitle({
+      apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
+      messages,
+    });
 
     // Verify streamText was called - the excerpt logic is internal
     expect(mockStreamText).toHaveBeenCalledTimes(1);
@@ -87,6 +93,7 @@ describe("streamChat", () => {
 
     await streamChat({
       apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
       messages: [{ role: "user", content: "Hi" }],
       onChunk,
     });
@@ -104,6 +111,7 @@ describe("streamChat", () => {
 
     await streamChat({
       apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
       messages: [{ role: "user", content: "Hi" }],
       onFinish,
     });
@@ -120,6 +128,7 @@ describe("streamChat", () => {
 
     await streamChat({
       apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
       messages: [{ role: "user", content: "Hi" }],
       onError,
     });
@@ -140,6 +149,7 @@ describe("streamChat", () => {
 
     await streamChat({
       apiKey: "test-key",
+      model: "anthropic/claude-sonnet-4-5",
       messages: [{ role: "user", content: "Hi" }],
       onError,
     });

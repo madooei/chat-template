@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const settingsSchema = z.object({
   displayName: z.string(),
-  geminiApiKey: z.string(),
+  openRouterApiKey: z.string(),
 });
 
 export const updateSettingsSchema = settingsSchema.partial();

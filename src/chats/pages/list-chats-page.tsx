@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { ArrowDownUp, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ChatList from "@/chats/components/chat-list";
 import { useMutationChats } from "@/chats/hooks/use-mutation-chats";
-import { $router } from "@/app/router";
 
 interface ListChatsPageProps {
   activeChatId?: string;
@@ -13,12 +13,13 @@ interface ListChatsPageProps {
 const ListChatsPage: React.FC<ListChatsPageProps> = ({ activeChatId }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [, setLocation] = useLocation();
   const { add: createChat } = useMutationChats();
 
   const handleNewChat = async () => {
     const chatId = await createChat({ title: "New Chat" });
     if (chatId) {
-      $router.open(`/chats/${chatId}/messages`);
+      setLocation(`/chats/${chatId}/messages`);
     }
   };
 

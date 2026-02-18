@@ -1,15 +1,14 @@
 import { useEffect } from "react";
-import { useStore } from "@nanostores/react";
+import { Switch, Route, useLocation } from "wouter";
 import Layout from "@/layout";
 import { useTheme } from "@/hooks/use-theme";
-import { $router } from "@/app/router";
 import ListChatsPage from "@/chats/pages/list-chats-page";
 import MessagesPage from "@/messages/pages/messages-page";
 import HomeEmptyState from "@/components/home-empty-state";
 
 function App() {
   const { theme } = useTheme();
-  const page = useStore($router);
+  const [location] = useLocation();
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -34,21 +33,22 @@ function App() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const activeChatId = page?.route === "messages" ? page.params.id : undefined;
-
-  const renderContent = () => {
-    switch (page?.route) {
-      case "messages":
-        return <MessagesPage key={page.params.id} chatId={page.params.id} />;
-      default:
-        return <HomeEmptyState />;
-    }
-  };
+  const chatIdMatch = location.match(/^\/chats\/([^/]+)\/messages$/);
+  const activeChatId = chatIdMatch ? chatIdMatch[1] : undefined;
 
   return (
     <Layout
       sidebar={<ListChatsPage activeChatId={activeChatId} />}
-      content={renderContent()}
+      content={
+        <Switch>
+          <Route path="/chats/:id/messages">
+            {(params) => <MessagesPage key={params.id} chatId={params.id} />}
+          </Route>
+          <Route>
+            <HomeEmptyState />
+          </Route>
+        </Switch>
+      }
       className="h-screen"
     />
   );
