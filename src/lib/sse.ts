@@ -46,6 +46,9 @@ export async function streamChatSSE({
     const decoder = new TextDecoder();
     let accumulated = "";
     let buffer = "";
+    // Buffer data lines for the current SSE event (multi-line data
+    // uses multiple "data:" lines that must be joined with "\n").
+    let eventDataLines: string[] = [];
 
     while (true) {
       const { done, value } = await reader.read();
@@ -60,20 +63,26 @@ export async function streamChatSSE({
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
-          const data = line.slice(6);
+          eventDataLines.push(line.slice(6));
+        } else if (line === "") {
+          // Blank line = end of SSE event — process buffered data lines
+          if (eventDataLines.length > 0) {
+            const eventData = eventDataLines.join("\n");
+            eventDataLines = [];
 
-          if (data === "[DONE]") {
-            onDone?.(accumulated);
-            return;
+            if (eventData === "[DONE]") {
+              onDone?.(accumulated);
+              return;
+            }
+
+            if (eventData.startsWith("[ERROR]: ")) {
+              const errorMessage = eventData.slice(9);
+              throw new Error(errorMessage);
+            }
+
+            accumulated += eventData;
+            onChunk?.(accumulated);
           }
-
-          if (data.startsWith("[ERROR]: ")) {
-            const errorMessage = data.slice(9);
-            throw new Error(errorMessage);
-          }
-
-          accumulated += data;
-          onChunk?.(accumulated);
         }
       }
     }
