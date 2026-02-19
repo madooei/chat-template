@@ -4,5 +4,6 @@ Brief "How To" guides that explain both _what_ and _why_ for each topic. Aimed a
 
 | Guide                         | What it covers                                                             |
 | ----------------------------- | -------------------------------------------------------------------------- |
-| [Testing](./testing.md)       | Vitest, React Testing Library, Playwright, and AI-assisted test generation |
-| [Deployment](./deployment.md) | Setting up Netlify, GitHub secrets, CI/CD workflows, SPA routing           |
+| [Claude Code](./claude-code.md) | The `.claude/` directory — rules, skills, commands, agents, hooks, settings |
+| [Testing](./testing.md)         | Vitest, React Testing Library, Playwright, and AI-assisted test generation  |
+| [Deployment](./deployment.md)   | Setting up Netlify, GitHub secrets, CI/CD workflows, SPA routing            |
