@@ -11,4 +11,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/mastra": {
+        target: "http://localhost:4111",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/mastra/, ""),
+      },
+    },
+  },
 });

@@ -20,10 +20,12 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:mcp": "playwright run-test-mcp-server",
     "validate": "npm run type-check && npm run type-check:test && npm run lint && npm run test",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:mastra": "cd mastra && npx mastra dev"
   },
   "dependencies": {
     "@legendapp/state": "^2.1.15",
+    "@mastra/client-js": "^1.4.0",
     "@openrouter/ai-sdk-provider": "^2.2.3",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.2.4",
