@@ -140,12 +140,12 @@ This creates a production deployment (separate from your dev deployment) and dep
 
 On the Convex dashboard, switch to your **production** deployment and set:
 
-| Variable             | Value                                                   |
-| -------------------- | ------------------------------------------------------- |
+| Variable             | Value                                                    |
+| -------------------- | -------------------------------------------------------- |
 | `JWT_PRIVATE_KEY`    | Same private key (or generate a new pair for production) |
-| `JWKS`               | Matching public key JSON                                |
-| `OPENROUTER_API_KEY` | Your production OpenRouter API key                      |
-| `SITE_URL`           | Your production URL (e.g., `https://myapp.netlify.app`) |
+| `JWKS`               | Matching public key JSON                                 |
+| `OPENROUTER_API_KEY` | Your production OpenRouter API key                       |
+| `SITE_URL`           | Your production URL (e.g., `https://myapp.netlify.app`)  |
 
 ### 3. Get Your Deploy Key
 
