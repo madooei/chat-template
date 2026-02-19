@@ -29,7 +29,8 @@ interface MessagesPageProps {
 const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   const { data: chat, loading: chatLoading } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
-  const { sendMessage, isStreaming, streamingContent, abort } = useChat(chatId);
+  const { sendMessage, isStreaming, streamingContent, abort, toolCalls } =
+    useChat(chatId);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [inputValue, setInputValue] = useState("");
   const [, setLocation] = useLocation();
@@ -109,6 +110,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
             messages={messages}
             streamingContent={streamingContent}
             isStreaming={isStreaming}
+            toolCalls={toolCalls}
             onInsertSuggestion={setInputValue}
           />
         </ChatContainerContent>

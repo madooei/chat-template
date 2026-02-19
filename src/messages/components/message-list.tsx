@@ -2,7 +2,9 @@ import { MessageSquare } from "lucide-react";
 import { MessageContent } from "@/components/prompt-kit/message";
 import { Loader } from "@/components/prompt-kit/loader";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
+import { Tool } from "@/components/prompt-kit/tool";
 import type { MessageType } from "@/messages/types/message";
+import type { ToolCallPart } from "@/messages/types/tool-call";
 import Message from "./message";
 
 const SUGGESTIONS = [
@@ -16,6 +18,7 @@ interface MessageListProps {
   messages: MessageType[];
   streamingContent?: string;
   isStreaming?: boolean;
+  toolCalls?: ToolCallPart[];
   onInsertSuggestion?: (content: string) => void;
 }
 
@@ -23,9 +26,10 @@ const MessageList: React.FC<MessageListProps> = ({
   messages,
   streamingContent,
   isStreaming,
+  toolCalls = [],
   onInsertSuggestion,
 }) => {
-  const isThinking = isStreaming && !streamingContent;
+  const isThinking = isStreaming && !streamingContent && toolCalls.length === 0;
 
   if (messages.length === 0 && !isStreaming) {
     return (
@@ -58,6 +62,22 @@ const MessageList: React.FC<MessageListProps> = ({
       {isThinking && (
         <div className="px-4 py-3">
           <Loader variant="text-shimmer" size="sm" text="Thinking" />
+        </div>
+      )}
+      {toolCalls.length > 0 && (
+        <div className="px-4">
+          {toolCalls.map((tc) => (
+            <Tool
+              key={tc.toolCallId}
+              toolPart={{
+                type: tc.toolName,
+                state: tc.state,
+                input: tc.args,
+                output: tc.result,
+                toolCallId: tc.toolCallId,
+              }}
+            />
+          ))}
         </div>
       )}
       {streamingContent && (

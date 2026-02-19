@@ -1,3 +1,15 @@
+interface ToolCallData {
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+}
+
+interface ToolResultData {
+  toolCallId: string;
+  toolName: string;
+  result: Record<string, unknown>;
+}
+
 interface StreamChatSSEOptions {
   siteUrl: string;
   token: string;
@@ -7,6 +19,8 @@ interface StreamChatSSEOptions {
   onChunk?: (accumulated: string) => void;
   onDone?: (fullText: string) => void;
   onError?: (error: Error) => void;
+  onToolCall?: (data: ToolCallData) => void;
+  onToolResult?: (data: ToolResultData) => void;
 }
 
 /**
@@ -21,6 +35,8 @@ export async function streamChatSSE({
   onChunk,
   onDone,
   onError,
+  onToolCall,
+  onToolResult,
 }: StreamChatSSEOptions): Promise<void> {
   try {
     const response = await fetch(`${siteUrl}/api/chat`, {
@@ -46,6 +62,8 @@ export async function streamChatSSE({
     const decoder = new TextDecoder();
     let accumulated = "";
     let buffer = "";
+    // Track the current event type from `event:` lines
+    let currentEvent = "text-delta";
     // Buffer data lines for the current SSE event (multi-line data
     // uses multiple "data:" lines that must be joined with "\n").
     let eventDataLines: string[] = [];
@@ -62,7 +80,9 @@ export async function streamChatSSE({
       buffer = lines.pop() ?? "";
 
       for (const line of lines) {
-        if (line.startsWith("data: ")) {
+        if (line.startsWith("event: ")) {
+          currentEvent = line.slice(7).trim();
+        } else if (line.startsWith("data: ")) {
           eventDataLines.push(line.slice(6));
         } else if (line === "") {
           // Blank line = end of SSE event — process buffered data lines
@@ -80,8 +100,21 @@ export async function streamChatSSE({
               throw new Error(errorMessage);
             }
 
-            accumulated += eventData;
-            onChunk?.(accumulated);
+            switch (currentEvent) {
+              case "text-delta":
+                accumulated += eventData;
+                onChunk?.(accumulated);
+                break;
+              case "tool-call":
+                onToolCall?.(JSON.parse(eventData) as ToolCallData);
+                break;
+              case "tool-result":
+                onToolResult?.(JSON.parse(eventData) as ToolResultData);
+                break;
+            }
+
+            // Reset event type for next event
+            currentEvent = "text-delta";
           }
         }
       }

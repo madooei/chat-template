@@ -6,6 +6,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { useAuthToken } from "@/hooks/use-auth-token";
 import { streamChatSSE } from "@/lib/sse";
 import { CONVEX_SITE_URL } from "@/lib/convex";
+import type { ToolCallPart } from "@/messages/types/tool-call";
 
 function friendlyErrorMessage(err: Error): string {
   const msg = err.message.toLowerCase();
@@ -38,8 +39,10 @@ export function useChat(chatId: string) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [error, setError] = useState<Error | null>(null);
+  const [toolCalls, setToolCalls] = useState<ToolCallPart[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  const toolCallsRef = useRef<Map<string, ToolCallPart>>(new Map());
   const token = useAuthToken();
   const createMessage = useMutation(api.messages_mutations.create);
 
@@ -85,6 +88,8 @@ export function useChat(chatId: string) {
       setIsStreaming(true);
       setStreamingContent("");
       setError(null);
+      setToolCalls([]);
+      toolCallsRef.current = new Map();
 
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
@@ -102,10 +107,36 @@ export function useChat(chatId: string) {
           if (requestIdRef.current !== requestId) return;
           setStreamingContent(accumulated);
         },
+        onToolCall: ({ toolCallId, toolName, args }) => {
+          if (requestIdRef.current !== requestId) return;
+          const part: ToolCallPart = {
+            toolCallId,
+            toolName,
+            state: "input-available",
+            args,
+          };
+          toolCallsRef.current.set(toolCallId, part);
+          setToolCalls(Array.from(toolCallsRef.current.values()));
+        },
+        onToolResult: ({ toolCallId, toolName, result }) => {
+          if (requestIdRef.current !== requestId) return;
+          const existing = toolCallsRef.current.get(toolCallId);
+          const part: ToolCallPart = {
+            toolCallId,
+            toolName,
+            state: "output-available",
+            args: existing?.args ?? {},
+            result,
+          };
+          toolCallsRef.current.set(toolCallId, part);
+          setToolCalls(Array.from(toolCallsRef.current.values()));
+        },
         onDone: () => {
           if (requestIdRef.current !== requestId) return;
           setStreamingContent("");
           setIsStreaming(false);
+          setToolCalls([]);
+          toolCallsRef.current = new Map();
           abortControllerRef.current = null;
           // No need to save assistant message — the server already did it.
           // Convex reactive query will deliver the persisted message.
@@ -115,6 +146,8 @@ export function useChat(chatId: string) {
           setError(err);
           setStreamingContent("");
           setIsStreaming(false);
+          setToolCalls([]);
+          toolCallsRef.current = new Map();
           abortControllerRef.current = null;
           console.error("[useChat] streaming failed:", err);
           const friendly = friendlyErrorMessage(err);
@@ -133,7 +166,16 @@ export function useChat(chatId: string) {
     abortControllerRef.current = null;
     setStreamingContent("");
     setIsStreaming(false);
+    setToolCalls([]);
+    toolCallsRef.current = new Map();
   }, []);
 
-  return { sendMessage, isStreaming, streamingContent, error, abort };
+  return {
+    sendMessage,
+    isStreaming,
+    streamingContent,
+    error,
+    abort,
+    toolCalls,
+  };
 }
