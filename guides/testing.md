@@ -8,7 +8,7 @@ These are the fast tests. They run without a real browser — Vitest uses **jsdo
 
 ### How it works
 
-1. You run `npm run test`
+1. You run `pnpm run test`
 2. Vitest reads `vitest.config.ts`, which merges the existing Vite config (so path aliases like `@/` just work) and sets jsdom as the environment
 3. Before any test runs, `src/test/setup.ts` patches the fake environment:
    - Stubs localStorage with a full Storage implementation (jsdom's proxy-based version doesn't support all methods)
@@ -37,10 +37,10 @@ const chat = createTestChat({ title: "My Chat" });
 
 These are the slow tests. Playwright opens a real Chromium browser and clicks around the running app like an actual user would.
 
-### What happens when you run `npm run test:e2e`
+### What happens when you run `pnpm run test:e2e`
 
 1. Playwright reads `playwright.config.ts`
-2. It sees the `webServer` block and starts `npm run dev` automatically, waiting until `http://127.0.0.1:5173` responds
+2. It sees the `webServer` block and starts `pnpm run dev` automatically, waiting until `http://127.0.0.1:5173` responds
 3. It launches headless Chromium (no visible window)
 4. It runs each test file in `e2e/`
 5. When done, it kills the dev server and the browser
@@ -98,9 +98,9 @@ The MCP server (configured in `.mcp.json`) is the bridge between Claude Code and
 
 | Command                 | What it runs                |
 | ----------------------- | --------------------------- |
-| `npm run test`          | All Vitest tests once       |
-| `npm run test:watch`    | Vitest in watch mode        |
-| `npm run test:ui`       | Vitest browser UI           |
-| `npm run test:coverage` | Vitest with coverage report |
-| `npm run test:e2e`      | Playwright E2E tests        |
-| `npm run test:e2e:ui`   | Playwright interactive UI   |
+| `pnpm run test`          | All Vitest tests once       |
+| `pnpm run test:watch`    | Vitest in watch mode        |
+| `pnpm run test:ui`       | Vitest browser UI           |
+| `pnpm run test:coverage` | Vitest with coverage report |
+| `pnpm run test:e2e`      | Playwright E2E tests        |
+| `pnpm run test:e2e:ui`   | Playwright interactive UI   |

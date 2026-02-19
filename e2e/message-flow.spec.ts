@@ -2,7 +2,15 @@ import { test, expect } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    const request = indexedDB.deleteDatabase("chat-app");
+    return new Promise<void>((resolve) => {
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+    });
+  });
   await page.reload();
 });
 
@@ -38,30 +46,50 @@ test.describe("Message flow", () => {
   });
 
   test("messages persist after reload", async ({ page }) => {
-    // Seed localStorage with a chat and message directly
+    // Seed IndexedDB with a chat and message directly
     const chatId = "test-chat-persist";
     await page.evaluate((id) => {
-      localStorage.setItem(
-        "chats",
-        JSON.stringify([
-          { _id: id, title: "Persist Test", _creationTime: Date.now() },
-        ]),
-      );
-      localStorage.setItem(
-        "messages",
-        JSON.stringify([
-          {
-            _id: "msg-1",
-            chatId: id,
-            role: "user",
-            content: "Persisted message",
-            _creationTime: Date.now(),
-          },
-        ]),
-      );
+      return new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open("chat-app", 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains("chats")) {
+            db.createObjectStore("chats");
+          }
+          if (!db.objectStoreNames.contains("messages")) {
+            db.createObjectStore("messages");
+          }
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(["chats", "messages"], "readwrite");
+          tx.objectStore("chats").put(
+            [{ _id: id, title: "Persist Test", _creationTime: Date.now() }],
+            "data",
+          );
+          tx.objectStore("messages").put(
+            [
+              {
+                _id: "msg-1",
+                chatId: id,
+                role: "user",
+                content: "Persisted message",
+                _creationTime: Date.now(),
+              },
+            ],
+            "data",
+          );
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+        request.onerror = () => reject(request.error);
+      });
     }, chatId);
 
-    // Navigate to the chat
+    // Navigate to the chat — the app will hydrate from IndexedDB
     await page.goto(`/chats/${chatId}/messages`);
     await expect(page.getByText("Persisted message")).toBeVisible();
 
