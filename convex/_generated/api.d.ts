@@ -24,6 +24,7 @@ import type * as messages_internals from "../messages_internals.js";
 import type * as messages_mutations from "../messages_mutations.js";
 import type * as messages_queries from "../messages_queries.js";
 import type * as messages_schema from "../messages_schema.js";
+import type * as weather from "../weather.js";
 
 import type {
   ApiFromModules,
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   messages_mutations: typeof messages_mutations;
   messages_queries: typeof messages_queries;
   messages_schema: typeof messages_schema;
+  weather: typeof weather;
 }>;
 
 /**

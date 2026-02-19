@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-import { streamText } from "ai";
+import { streamText, tool, stepCountIs } from "ai";
+import { z } from "zod";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { type Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
+import { getLocation, getCurrentWeather } from "./weather";
 
 // Hono app typed with Convex action context + userId from auth middleware
 type Env = {
@@ -12,6 +14,27 @@ type Env = {
     ctx: ActionCtx;
     userId: Id<"users">;
   };
+};
+
+const weatherTools = {
+  getLocation: tool({
+    description:
+      "Given a city name, returns the location with latitude and longitude coordinates",
+    inputSchema: z.object({
+      city: z.string().describe("City name, e.g. Baltimore"),
+    }),
+    execute: async ({ city }) => getLocation(city),
+  }),
+  getCurrentWeather: tool({
+    description:
+      "Given latitude and longitude coordinates, returns the current weather conditions",
+    inputSchema: z.object({
+      latitude: z.number().describe("Latitude coordinate, e.g. 39.29"),
+      longitude: z.number().describe("Longitude coordinate, e.g. -76.61"),
+    }),
+    execute: async ({ latitude, longitude }) =>
+      getCurrentWeather(latitude, longitude),
+  }),
 };
 
 const app = new Hono<Env>();
@@ -56,16 +79,57 @@ app.post("/api/chat", async (c) => {
 
   return streamSSE(c, async (stream) => {
     try {
+      console.log("[chat] tools enabled:", Object.keys(weatherTools));
       const result = streamText({
         model: openrouter.chat(model),
         messages,
+        tools: weatherTools,
+        stopWhen: stepCountIs(5),
+        system:
+          "You are a helpful assistant. When the user asks about weather, use the provided tools to look up weather information. Always call getLocation first to get the latitude and longitude, then use those coordinates with getCurrentWeather.",
+        onStepFinish: ({ text, toolCalls, toolResults, finishReason }) => {
+          console.log("[chat] step finished:", {
+            finishReason,
+            toolCalls: toolCalls?.length ?? 0,
+            toolResults: toolResults?.length ?? 0,
+            textLength: text?.length ?? 0,
+          });
+        },
       });
 
       let fullText = "";
 
-      for await (const chunk of (await result).textStream) {
-        fullText += chunk;
-        await stream.writeSSE({ data: chunk, event: "text-delta" });
+      for await (const part of (await result).fullStream) {
+        console.log("[chat] stream part:", part.type);
+        switch (part.type) {
+          case "text-delta":
+            fullText += part.text;
+            await stream.writeSSE({
+              data: part.text,
+              event: "text-delta",
+            });
+            break;
+          case "tool-call":
+            await stream.writeSSE({
+              data: JSON.stringify({
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                args: part.input,
+              }),
+              event: "tool-call",
+            });
+            break;
+          case "tool-result":
+            await stream.writeSSE({
+              data: JSON.stringify({
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                result: part.output,
+              }),
+              event: "tool-result",
+            });
+            break;
+        }
       }
 
       // Save assistant message to DB
