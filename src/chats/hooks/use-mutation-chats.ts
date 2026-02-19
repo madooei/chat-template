@@ -1,18 +1,15 @@
+import { useMutation } from "convex/react";
 import { toast } from "sonner";
-
-import type { CreateChatType } from "@/chats/types/chat";
-import { addChat } from "../store/chat";
+import { api } from "../../../convex/_generated/api";
 
 export function useMutationChats() {
-  const createChat = async (chat: CreateChatType): Promise<string | null> => {
-    try {
-      const chatId = crypto.randomUUID(); // Simulated chat ID
-      addChat({
-        ...chat,
-        _id: chatId,
-        _creationTime: Date.now(),
-      });
+  const createMutation = useMutation(api.chats_mutations.create);
 
+  const createChat = async (chat: {
+    title: string;
+  }): Promise<string | null> => {
+    try {
+      const chatId = await createMutation({ title: chat.title });
       toast.success("Chat created successfully");
       return chatId;
     } catch (error) {

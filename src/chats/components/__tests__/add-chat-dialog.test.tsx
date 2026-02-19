@@ -11,6 +11,10 @@ vi.mock("wouter", () => ({
   useLocation: () => ["/", mockSetLocation],
 }));
 
+vi.mock("convex/react", () => ({
+  useMutation: () => vi.fn().mockResolvedValue("new-chat-id"),
+}));
+
 describe("AddChatDialog", () => {
   it("renders dialog content when open", () => {
     render(<AddChatDialog open={true} onOpenChange={vi.fn()} />);

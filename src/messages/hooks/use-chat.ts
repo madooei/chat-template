@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useMutation } from "convex/react";
 import { toast } from "sonner";
-import { getSettings } from "@/settings/store/settings";
-import { addMessage } from "@/messages/store/message";
-import { $messages } from "@/messages/store/message";
-import { $chats, updateChat } from "@/chats/store/chat";
-import { streamChat, generateChatTitle } from "@/lib/ai";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useAuthToken } from "@/hooks/use-auth-token";
+import { streamChatSSE } from "@/lib/sse";
+import { CONVEX_SITE_URL } from "@/lib/convex";
 
 function friendlyErrorMessage(err: Error): string {
   const msg = err.message.toLowerCase();
@@ -14,7 +15,7 @@ function friendlyErrorMessage(err: Error): string {
     msg.includes("unauthorized") ||
     msg.includes("401")
   ) {
-    return "Your API key is invalid. Please check it in Settings.";
+    return "Authentication error. Please refresh the page.";
   }
   if (
     msg.includes("quota") ||
@@ -39,6 +40,8 @@ export function useChat(chatId: string) {
   const [error, setError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  const token = useAuthToken();
+  const createMessage = useMutation(api.messages_mutations.create);
 
   useEffect(() => {
     return () => {
@@ -51,11 +54,9 @@ export function useChat(chatId: string) {
 
   const sendMessage = useCallback(
     async (content: string, model: string): Promise<boolean> => {
-      const settings = getSettings();
-
-      if (!settings.openRouterApiKey) {
-        toast.error("API key not configured", {
-          description: "Add your OpenRouter API key in Settings",
+      if (!token) {
+        toast.error("Not authenticated", {
+          description: "Please refresh the page to sign in.",
         });
         return false;
       }
@@ -67,18 +68,19 @@ export function useChat(chatId: string) {
         abortControllerRef.current = null;
       }
 
-      addMessage({
-        _id: crypto.randomUUID(),
-        chatId,
-        role: "user",
-        content,
-        _creationTime: Date.now(),
-      });
-
-      const history = $messages
-        .get()
-        .filter((m) => m.chatId === chatId)
-        .map((m) => ({ role: m.role, content: m.content }));
+      // Save user message via Convex mutation (appears immediately via reactive query)
+      try {
+        await createMessage({
+          chatId: chatId as Id<"chats">,
+          role: "user",
+          content,
+        });
+      } catch (err) {
+        toast.error("Failed to save message", {
+          description: (err as Error).message,
+        });
+        return false;
+      }
 
       setIsStreaming(true);
       setStreamingContent("");
@@ -90,56 +92,23 @@ export function useChat(chatId: string) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      void streamChat({
-        apiKey: settings.openRouterApiKey,
+      void streamChatSSE({
+        siteUrl: CONVEX_SITE_URL,
+        token,
+        chatId,
         model,
-        messages: history,
-        abortSignal: abortController.signal,
+        signal: abortController.signal,
         onChunk: (accumulated) => {
           if (requestIdRef.current !== requestId) return;
           setStreamingContent(accumulated);
         },
-        onFinish: (fullText) => {
+        onDone: () => {
           if (requestIdRef.current !== requestId) return;
-
-          const chat = $chats.get().find((c) => c._id === chatId);
-          if (!chat) {
-            setStreamingContent("");
-            setIsStreaming(false);
-            abortControllerRef.current = null;
-            return;
-          }
-
-          addMessage({
-            _id: crypto.randomUUID(),
-            chatId,
-            role: "assistant",
-            content: fullText,
-            _creationTime: Date.now(),
-          });
           setStreamingContent("");
           setIsStreaming(false);
           abortControllerRef.current = null;
-
-          if (chat.title === "New Chat") {
-            const allMessages = $messages
-              .get()
-              .filter((m) => m.chatId === chatId)
-              .map((m) => ({ role: m.role, content: m.content }));
-
-            generateChatTitle({
-              apiKey: settings.openRouterApiKey,
-              model,
-              messages: allMessages,
-            }).then((title) => {
-              if (requestIdRef.current !== requestId || !title) return;
-
-              const latestChat = $chats.get().find((c) => c._id === chatId);
-              if (latestChat) {
-                updateChat({ ...latestChat, title });
-              }
-            });
-          }
+          // No need to save assistant message — the server already did it.
+          // Convex reactive query will deliver the persisted message.
         },
         onError: (err) => {
           if (requestIdRef.current !== requestId) return;
@@ -155,7 +124,7 @@ export function useChat(chatId: string) {
 
       return true;
     },
-    [chatId],
+    [chatId, token, createMessage],
   );
 
   const abort = useCallback(() => {

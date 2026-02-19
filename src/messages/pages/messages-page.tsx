@@ -27,7 +27,7 @@ interface MessagesPageProps {
 }
 
 const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
-  const { data: chat } = useQueryChat(chatId);
+  const { data: chat, loading: chatLoading } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
   const { sendMessage, isStreaming, streamingContent, abort } = useChat(chatId);
   const [model, setModel] = useState(DEFAULT_MODEL);
@@ -42,6 +42,14 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
       setInputValue("");
     }
   };
+
+  if (chatLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!chat) {
     return (

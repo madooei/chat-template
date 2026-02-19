@@ -1,17 +1,18 @@
+import { useMutation } from "convex/react";
 import { toast } from "sonner";
-
-import type { UpdateChatType } from "@/chats/types/chat";
-import { useQueryChat } from "./use-query-chat";
-import { updateChat, removeChat } from "@/chats/store/chat";
-import { removeMessagesByChatId } from "@/messages/store/message";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 export function useMutationChat(chatId: string) {
-  const { data: chat } = useQueryChat(chatId);
+  const updateMutation = useMutation(api.chats_mutations.update);
+  const removeMutation = useMutation(api.chats_mutations.remove);
 
-  const editChat = async (updates: UpdateChatType): Promise<boolean> => {
+  const editChat = async (updates: { title?: string }): Promise<boolean> => {
     try {
-      if (!chat) return false;
-      updateChat({ ...chat, ...updates });
+      await updateMutation({
+        chatId: chatId as Id<"chats">,
+        ...updates,
+      });
       toast.success("Chat updated successfully");
       return true;
     } catch (error) {
@@ -24,8 +25,7 @@ export function useMutationChat(chatId: string) {
 
   const deleteChat = async (): Promise<boolean> => {
     try {
-      removeMessagesByChatId(chatId);
-      removeChat(chatId);
+      await removeMutation({ chatId: chatId as Id<"chats"> });
       toast.success("Chat deleted successfully");
       return true;
     } catch (error) {

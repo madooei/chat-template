@@ -1,37 +1,21 @@
 import { toast } from "sonner";
 
-import type { UpdateMessageType } from "@/messages/types/message";
-import { useQueryMessage } from "./use-query-message";
-import { updateMessage, removeMessage } from "@/messages/store/message";
-
-export function useMutationMessage(messageId: string) {
-  const { data: message } = useQueryMessage(messageId);
-
-  const editMessage = async (updates: UpdateMessageType): Promise<boolean> => {
-    try {
-      if (!message) return false;
-      updateMessage({ ...message, ...updates });
-      toast.success("Message updated successfully");
-      return true;
-    } catch (error) {
-      toast.error("Error updating message", {
-        description: (error as Error).message || "Please try again later",
-      });
-      return false;
-    }
+// In Phase 2, individual message mutations (edit/delete) are not yet
+// implemented on the backend. This hook is kept as a placeholder to
+// maintain the same API surface for components.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function useMutationMessage(_messageId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const editMessage = async (_updates: {
+    content?: string;
+  }): Promise<boolean> => {
+    toast.error("Message editing is not yet supported");
+    return false;
   };
 
   const deleteMessage = async (): Promise<boolean> => {
-    try {
-      removeMessage(messageId);
-      toast.success("Message deleted successfully");
-      return true;
-    } catch (error) {
-      toast.error("Error deleting message", {
-        description: (error as Error).message || "Please try again later",
-      });
-      return false;
-    }
+    toast.error("Message deletion is not yet supported");
+    return false;
   };
 
   return {

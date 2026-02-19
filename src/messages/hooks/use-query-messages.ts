@@ -1,15 +1,16 @@
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import type { MessageType } from "@/messages/types/message";
-import { useSelector } from "@legendapp/state/react";
-import { $messages } from "@/messages/store/message";
 
 export function useQueryMessages(chatId: string) {
-  const filtered = useSelector(() =>
-    $messages.get().filter((m) => m.chatId === chatId),
-  );
+  const messages = useQuery(api.messages_queries.getByChat, {
+    chatId: chatId as Id<"chats">,
+  }) as MessageType[] | undefined;
 
   return {
-    data: filtered as MessageType[],
-    loading: false,
+    data: messages ?? [],
+    loading: messages === undefined,
     error: false,
   };
 }

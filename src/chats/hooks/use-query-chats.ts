@@ -1,15 +1,13 @@
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import type { ChatType } from "@/chats/types/chat";
-import { useSelector } from "@legendapp/state/react";
-import { $chats } from "@/chats/store/chat";
 
 export function useQueryChats() {
-  const chats = useSelector(() => $chats.get());
+  const chats = useQuery(api.chats_queries.getAll) as ChatType[] | undefined;
 
   return {
-    data: chats as ChatType[],
-    loading: false,
+    data: chats ?? [],
+    loading: chats === undefined,
     error: false,
-    status: "success",
-    loadMore: () => {},
   };
 }

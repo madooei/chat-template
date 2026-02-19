@@ -1,0 +1,89 @@
+interface StreamChatSSEOptions {
+  siteUrl: string;
+  token: string;
+  chatId: string;
+  model: string;
+  signal?: AbortSignal;
+  onChunk?: (accumulated: string) => void;
+  onDone?: (fullText: string) => void;
+  onError?: (error: Error) => void;
+}
+
+/**
+ * POST to the Convex HTTP endpoint and consume the SSE stream.
+ */
+export async function streamChatSSE({
+  siteUrl,
+  token,
+  chatId,
+  model,
+  signal,
+  onChunk,
+  onDone,
+  onError,
+}: StreamChatSSEOptions): Promise<void> {
+  try {
+    const response = await fetch(`${siteUrl}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ chatId, model }),
+      signal,
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP ${response.status}: ${body}`);
+    }
+
+    if (!response.body) {
+      throw new Error("No response body");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let accumulated = "";
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE lines
+      const lines = buffer.split("\n");
+      // Keep the last incomplete line in the buffer
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+
+          if (data === "[DONE]") {
+            onDone?.(accumulated);
+            return;
+          }
+
+          if (data.startsWith("[ERROR]: ")) {
+            const errorMessage = data.slice(9);
+            throw new Error(errorMessage);
+          }
+
+          accumulated += data;
+          onChunk?.(accumulated);
+        }
+      }
+    }
+
+    // Stream ended without [DONE] — treat accumulated as final
+    onDone?.(accumulated);
+  } catch (error) {
+    if ((error as Error).name === "AbortError") {
+      return;
+    }
+    onError?.(error as Error);
+  }
+}

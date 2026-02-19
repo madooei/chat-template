@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useSelector } from "@legendapp/state/react";
 import { useLocation } from "wouter";
 import { MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,11 +9,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { $chats } from "@/chats/store/chat";
+import { useQueryChats } from "@/chats/hooks/use-query-chats";
+import { useMutationChat } from "@/chats/hooks/use-mutation-chat";
 import type { ChatType } from "@/chats/types/chat";
-import { toast } from "sonner";
-import { removeChat } from "@/chats/store/chat";
-import { removeMessagesByChatId } from "@/messages/store/message";
 import EditChatDialog from "@/chats/components/edit-chat-dialog";
 import DeleteChatDialog from "@/chats/components/delete-chat-dialog";
 import { useSidebar } from "@/layout/sidebar-context";
@@ -80,24 +77,49 @@ function groupByDate(
     .map(([label, chats]) => ({ label, chats }));
 }
 
+function DeleteChatButton({
+  chatId,
+  activeChatId,
+}: {
+  chatId: string;
+  activeChatId?: string;
+}) {
+  const { delete: deleteChat } = useMutationChat(chatId);
+  const [, setLocation] = useLocation();
+
+  const handleDelete = async () => {
+    const success = await deleteChat();
+    if (success && chatId === activeChatId) {
+      setLocation("/");
+    }
+  };
+
+  return (
+    <DeleteChatDialog
+      onDelete={handleDelete}
+      trigger={
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="Delete chat"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      }
+    />
+  );
+}
+
 const ChatList: React.FC<ChatListProps> = ({
   activeChatId,
   searchQuery,
   sortOrder = "desc",
 }) => {
-  const chats = useSelector(() => $chats.get());
+  const { data: chats, loading } = useQueryChats();
   const [, setLocation] = useLocation();
   const [editingChat, setEditingChat] = useState<ChatType | null>(null);
   const { closeSidebar } = useSidebar();
-
-  const handleDelete = (chatId: string) => {
-    removeMessagesByChatId(chatId);
-    removeChat(chatId);
-    toast.success("Chat deleted successfully");
-    if (chatId === activeChatId) {
-      setLocation("/");
-    }
-  };
 
   const filtered = chats
     .filter((chat) =>
@@ -110,6 +132,14 @@ const ChatList: React.FC<ChatListProps> = ({
         ? b._creationTime - a._creationTime
         : a._creationTime - b._creationTime,
     );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-sm text-muted-foreground">Loading chats...</p>
+      </div>
+    );
+  }
 
   if (chats.length === 0) {
     return (
@@ -207,18 +237,9 @@ const ChatList: React.FC<ChatListProps> = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <DeleteChatDialog
-                            onDelete={() => handleDelete(chat._id)}
-                            trigger={
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                aria-label="Delete chat"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            }
+                          <DeleteChatButton
+                            chatId={chat._id}
+                            activeChatId={activeChatId}
                           />
                         </TooltipTrigger>
                         <TooltipContent side="top">Delete chat</TooltipContent>
