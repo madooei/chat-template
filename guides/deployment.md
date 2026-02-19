@@ -10,15 +10,18 @@ This project deploys to [Netlify](https://www.netlify.com/) via GitHub Actions. 
 ## Step 1 — Create a Netlify Site
 
 1. Log in to [Netlify](https://app.netlify.com/)
-2. Click **Add new site** > **Import an existing project**
+2. Click **Add new project** > **Import an existing project**
 3. Choose **Deploy manually** (we handle builds in GitHub Actions, not Netlify)
-4. Note your **Site ID** — you'll find it under **Site configuration** > **General** > **Site ID**
+   - Build your project with `pnpm run build` locally
+   - Drag and drop the `dist` folder to the Netlify build step in the UI
+4. Note your **Site ID** — you'll find it under **Project configuration** > **General** > **Project ID**
 
 ## Step 2 — Generate a Netlify Personal Access Token
 
 1. Go to [User settings > Applications](https://app.netlify.com/user/applications)
 2. Under **Personal access tokens**, click **New access token**
 3. Give it a descriptive name (e.g., `github-actions-deploy`)
+   - Set "No expiration" for the expiration date of the token.
 4. Copy the token — you won't see it again
 
 ## Step 3 — Add Secrets to GitHub
