@@ -96,8 +96,8 @@ The MCP server (configured in `.mcp.json`) is the bridge between Claude Code and
 
 ## Quick Reference
 
-| Command                 | What it runs                |
-| ----------------------- | --------------------------- |
+| Command                  | What it runs                |
+| ------------------------ | --------------------------- |
 | `pnpm run test`          | All Vitest tests once       |
 | `pnpm run test:watch`    | Vitest in watch mode        |
 | `pnpm run test:ui`       | Vitest browser UI           |
