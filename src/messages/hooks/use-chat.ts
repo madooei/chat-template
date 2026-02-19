@@ -11,6 +11,7 @@ import {
   getMastraEndpoint,
 } from "@/lib/ai";
 import { getAgentConfig } from "@/config/agents";
+import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
 
 function friendlyErrorMessage(err: Error): string {
   const msg = err.message.toLowerCase();
@@ -46,6 +47,8 @@ export function useChat(chatId: string) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [error, setError] = useState<Error | null>(null);
+  const [researchPhase, setResearchPhase] = useState<ResearchPhase>("idle");
+  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
@@ -102,11 +105,6 @@ export function useChat(chatId: string) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      const onChunk = (accumulated: string) => {
-        if (requestIdRef.current !== requestId) return;
-        setStreamingContent(accumulated);
-      };
-
       const onFinish = (fullText: string) => {
         if (requestIdRef.current !== requestId) return;
 
@@ -114,6 +112,8 @@ export function useChat(chatId: string) {
         if (!latestChat) {
           setStreamingContent("");
           setIsStreaming(false);
+          setResearchPhase("idle");
+          setToolEvents([]);
           abortControllerRef.current = null;
           return;
         }
@@ -127,6 +127,8 @@ export function useChat(chatId: string) {
         });
         setStreamingContent("");
         setIsStreaming(false);
+        setResearchPhase("idle");
+        setToolEvents([]);
         abortControllerRef.current = null;
 
         // Auto-generate title for new chats
@@ -166,6 +168,8 @@ export function useChat(chatId: string) {
         setError(err);
         setStreamingContent("");
         setIsStreaming(false);
+        setResearchPhase("idle");
+        setToolEvents([]);
         abortControllerRef.current = null;
         console.error("[useChat] streaming failed:", err);
         const friendly = friendlyErrorMessage(err);
@@ -173,16 +177,74 @@ export function useChat(chatId: string) {
       };
 
       if (agentConfig.type === "mastra" && agentConfig.mastraAgentId) {
+        // Two-phase flow: research agent → report agent
+        setResearchPhase("researching");
+        setToolEvents([]);
+
         void streamMastraChat({
           endpoint: getMastraEndpoint(),
           agentId: agentConfig.mastraAgentId,
           messages: history,
           abortSignal: abortController.signal,
-          onChunk,
-          onFinish,
+          onToolCall: (event) => {
+            if (requestIdRef.current !== requestId) return;
+            setToolEvents((prev) => [
+              ...prev,
+              {
+                id: event.toolCallId,
+                toolName: event.toolName,
+                status: "running",
+                args: event.args,
+                timestamp: Date.now(),
+              },
+            ]);
+          },
+          onToolResult: (event) => {
+            if (requestIdRef.current !== requestId) return;
+            setToolEvents((prev) =>
+              prev.map((te) =>
+                te.id === event.toolCallId
+                  ? {
+                      ...te,
+                      status: event.isError ? "error" : "completed",
+                      result: event.result,
+                    }
+                  : te,
+              ),
+            );
+          },
+          // Research text is accumulated silently — not shown to the user
+          onChunk: undefined,
+          onFinish: (researchText) => {
+            if (requestIdRef.current !== requestId) return;
+
+            // Phase 2: call report agent to produce a clean markdown report
+            setResearchPhase("reporting");
+            setStreamingContent("");
+
+            const reportPrompt = `Based on the following research data, write a comprehensive report answering: ${content}\n\nResearch Data:\n${researchText}`;
+
+            void streamMastraChat({
+              endpoint: getMastraEndpoint(),
+              agentId: "report-agent",
+              messages: [{ role: "user", content: reportPrompt }],
+              abortSignal: abortController.signal,
+              onChunk: (accumulated) => {
+                if (requestIdRef.current !== requestId) return;
+                setStreamingContent(accumulated);
+              },
+              onFinish,
+              onError,
+            });
+          },
           onError,
         });
       } else {
+        const onChunk = (accumulated: string) => {
+          if (requestIdRef.current !== requestId) return;
+          setStreamingContent(accumulated);
+        };
+
         void streamChat({
           apiKey: settings.openRouterApiKey,
           model,
@@ -205,7 +267,17 @@ export function useChat(chatId: string) {
     abortControllerRef.current = null;
     setStreamingContent("");
     setIsStreaming(false);
+    setResearchPhase("idle");
+    setToolEvents([]);
   }, []);
 
-  return { sendMessage, isStreaming, streamingContent, error, abort };
+  return {
+    sendMessage,
+    isStreaming,
+    streamingContent,
+    error,
+    abort,
+    researchPhase,
+    toolEvents,
+  };
 }

@@ -2,7 +2,9 @@ import { MessageSquare, Search } from "lucide-react";
 import { MessageContent } from "@/components/prompt-kit/message";
 import { Loader } from "@/components/prompt-kit/loader";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
+import { ResearchProgress } from "./research-progress";
 import type { MessageType } from "@/messages/types/message";
+import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
 import Message from "./message";
 
 const DIRECT_SUGGESTIONS = [
@@ -25,6 +27,8 @@ interface MessageListProps {
   isStreaming?: boolean;
   onInsertSuggestion?: (content: string) => void;
   agentType?: "direct" | "mastra";
+  researchPhase?: ResearchPhase;
+  toolEvents?: ToolEvent[];
 }
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -33,14 +37,21 @@ const MessageList: React.FC<MessageListProps> = ({
   isStreaming,
   onInsertSuggestion,
   agentType = "direct",
+  researchPhase,
+  toolEvents,
 }) => {
-  const isThinking = isStreaming && !streamingContent;
   const isResearch = agentType === "mastra";
   const suggestions = isResearch ? RESEARCH_SUGGESTIONS : DIRECT_SUGGESTIONS;
   const EmptyIcon = isResearch ? Search : MessageSquare;
   const emptyTitle = isResearch
     ? "What would you like to research?"
     : "How can I help you today?";
+
+  const isThinking =
+    isStreaming &&
+    !streamingContent &&
+    (!researchPhase || researchPhase === "idle");
+  const isWaitingForReport = researchPhase === "reporting" && !streamingContent;
 
   if (messages.length === 0 && !isStreaming) {
     return (
@@ -68,13 +79,17 @@ const MessageList: React.FC<MessageListProps> = ({
       {messages.map((message) => (
         <Message key={message._id} message={message} />
       ))}
+      {researchPhase && researchPhase !== "idle" && (
+        <ResearchProgress phase={researchPhase} toolEvents={toolEvents ?? []} />
+      )}
       {isThinking && (
         <div className="px-4 py-3">
-          <Loader
-            variant="text-shimmer"
-            size="sm"
-            text={isResearch ? "Researching" : "Thinking"}
-          />
+          <Loader variant="text-shimmer" size="sm" text="Thinking" />
+        </div>
+      )}
+      {isWaitingForReport && (
+        <div className="px-4 py-3">
+          <Loader variant="text-shimmer" size="sm" text="Writing report" />
         </div>
       )}
       {streamingContent && (

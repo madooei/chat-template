@@ -114,6 +114,17 @@ interface StreamMastraChatOptions {
   onChunk?: (accumulatedText: string) => void;
   onFinish?: (fullText: string) => void;
   onError?: (error: Error) => void;
+  onToolCall?: (event: {
+    toolCallId: string;
+    toolName: string;
+    args?: unknown;
+  }) => void;
+  onToolResult?: (event: {
+    toolCallId: string;
+    toolName: string;
+    result?: unknown;
+    isError?: boolean;
+  }) => void;
 }
 
 export async function streamMastraChat({
@@ -124,6 +135,8 @@ export async function streamMastraChat({
   onChunk,
   onFinish,
   onError,
+  onToolCall,
+  onToolResult,
 }: StreamMastraChatOptions) {
   try {
     const client = new MastraClient({
@@ -143,6 +156,19 @@ export async function streamMastraChat({
         if (chunk.type === "text-delta") {
           accumulated += chunk.payload.text;
           onChunk?.(accumulated);
+        } else if (chunk.type === "tool-call") {
+          onToolCall?.({
+            toolCallId: chunk.payload.toolCallId as string,
+            toolName: chunk.payload.toolName as string,
+            args: chunk.payload.args,
+          });
+        } else if (chunk.type === "tool-result") {
+          onToolResult?.({
+            toolCallId: chunk.payload.toolCallId as string,
+            toolName: chunk.payload.toolName as string,
+            result: chunk.payload.result,
+            isError: chunk.payload.isError as boolean | undefined,
+          });
         }
       },
     });

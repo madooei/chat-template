@@ -238,12 +238,26 @@ describe("streamMastraChat", () => {
     expect(onFinish).toHaveBeenCalledWith("Hello World");
   });
 
-  it("ignores non-text chunks (start, tool-call, finish, etc.)", async () => {
+  it("non-text chunks do not affect text accumulation", async () => {
     mockAgentStream([
       { type: "start", payload: {} },
       { type: "step-start", payload: {} },
-      { type: "tool-call", payload: { toolName: "webSearch" } },
-      { type: "tool-result", payload: {} },
+      {
+        type: "tool-call",
+        payload: {
+          toolCallId: "tc-1",
+          toolName: "webSearch",
+          args: { query: "test" },
+        },
+      },
+      {
+        type: "tool-result",
+        payload: {
+          toolCallId: "tc-1",
+          toolName: "webSearch",
+          result: "some result",
+        },
+      },
       { type: "text-delta", payload: { text: "Final answer" } },
       { type: "finish", payload: {} },
     ]);
@@ -255,6 +269,86 @@ describe("streamMastraChat", () => {
 
     expect(onChunk).toHaveBeenCalledTimes(1);
     expect(onFinish).toHaveBeenCalledWith("Final answer");
+  });
+
+  it("calls onToolCall when tool-call chunks arrive", async () => {
+    mockAgentStream([
+      {
+        type: "tool-call",
+        payload: {
+          toolCallId: "tc-1",
+          toolName: "webSearchTool",
+          args: { query: "AI news" },
+        },
+      },
+      {
+        type: "tool-call",
+        payload: {
+          toolCallId: "tc-2",
+          toolName: "evaluateResultTool",
+          args: { url: "https://example.com" },
+        },
+      },
+      { type: "text-delta", payload: { text: "Done" } },
+    ]);
+
+    const onToolCall = vi.fn();
+
+    await streamMastraChat({ ...baseOpts, onToolCall });
+
+    expect(onToolCall).toHaveBeenCalledTimes(2);
+    expect(onToolCall).toHaveBeenCalledWith({
+      toolCallId: "tc-1",
+      toolName: "webSearchTool",
+      args: { query: "AI news" },
+    });
+    expect(onToolCall).toHaveBeenCalledWith({
+      toolCallId: "tc-2",
+      toolName: "evaluateResultTool",
+      args: { url: "https://example.com" },
+    });
+  });
+
+  it("calls onToolResult when tool-result chunks arrive", async () => {
+    mockAgentStream([
+      {
+        type: "tool-result",
+        payload: {
+          toolCallId: "tc-1",
+          toolName: "webSearchTool",
+          result: { data: "search results" },
+          isError: false,
+        },
+      },
+      {
+        type: "tool-result",
+        payload: {
+          toolCallId: "tc-2",
+          toolName: "evaluateResultTool",
+          result: null,
+          isError: true,
+        },
+      },
+      { type: "text-delta", payload: { text: "Done" } },
+    ]);
+
+    const onToolResult = vi.fn();
+
+    await streamMastraChat({ ...baseOpts, onToolResult });
+
+    expect(onToolResult).toHaveBeenCalledTimes(2);
+    expect(onToolResult).toHaveBeenCalledWith({
+      toolCallId: "tc-1",
+      toolName: "webSearchTool",
+      result: { data: "search results" },
+      isError: false,
+    });
+    expect(onToolResult).toHaveBeenCalledWith({
+      toolCallId: "tc-2",
+      toolName: "evaluateResultTool",
+      result: null,
+      isError: true,
+    });
   });
 
   it("calls onError when stream throws", async () => {
