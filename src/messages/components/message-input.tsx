@@ -6,7 +6,7 @@ import {
   PromptInputActions,
   PromptInputAction,
 } from "@/components/prompt-kit/prompt-input";
-import { Paperclip, Mic, Send, Square } from "lucide-react";
+import { Paperclip, Mic, Send, Square, Globe } from "lucide-react";
 
 interface MessageInputProps {
   value: string;
@@ -14,6 +14,8 @@ interface MessageInputProps {
   onSend: (content: string) => void | Promise<void>;
   isLoading?: boolean;
   onAbort?: () => void;
+  researchEnabled?: boolean;
+  onResearchToggle?: () => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
@@ -22,6 +24,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
   isLoading,
   onAbort,
+  researchEnabled,
+  onResearchToggle,
 }) => {
   const handleSubmit = () => {
     const trimmed = value.trim();
@@ -40,6 +44,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
         <PromptInputTextarea placeholder="Ask anything..." autoFocus />
         <PromptInputActions className="justify-between px-2 pt-2">
           <div className="flex items-center gap-2">
+            <PromptInputAction
+              tooltip={researchEnabled ? "Deep Research" : "Deep Research"}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 ${researchEnabled ? "bg-primary/10 text-primary" : ""}`}
+                aria-label="Deep Research"
+                onClick={onResearchToggle}
+              >
+                <Globe className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
             <PromptInputAction tooltip="Attach file">
               <Button
                 variant="ghost"

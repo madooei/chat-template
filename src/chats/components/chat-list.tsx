@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSelector } from "@legendapp/state/react";
 import { useLocation } from "wouter";
-import { MessageSquare, Pencil, Search, Trash2 } from "lucide-react";
+import { MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -18,7 +18,6 @@ import { removeMessagesByChatId } from "@/messages/store/message";
 import EditChatDialog from "@/chats/components/edit-chat-dialog";
 import DeleteChatDialog from "@/chats/components/delete-chat-dialog";
 import { useSidebar } from "@/layout/sidebar-context";
-import { getAgentConfig } from "@/config/agents";
 
 interface ChatListProps {
   activeChatId?: string;
@@ -143,10 +142,6 @@ const ChatList: React.FC<ChatListProps> = ({
             {group.chats.map((chat) => {
               const isActive = chat._id === activeChatId;
 
-              const agent = getAgentConfig(chat.agentId);
-              const IconComponent =
-                agent.type === "mastra" ? Search : MessageSquare;
-
               return (
                 <li key={chat._id} className="relative group">
                   <div
@@ -169,7 +164,7 @@ const ChatList: React.FC<ChatListProps> = ({
                       isActive && "bg-secondary border-l-2 border-l-primary",
                     )}
                   >
-                    <IconComponent
+                    <MessageSquare
                       className={cn(
                         "h-4 w-4 mt-0.5 flex-shrink-0",
                         isActive ? "text-primary" : "text-muted-foreground",

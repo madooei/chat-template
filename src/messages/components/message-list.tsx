@@ -1,4 +1,4 @@
-import { MessageSquare, Search } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { MessageContent } from "@/components/prompt-kit/message";
 import { Loader } from "@/components/prompt-kit/loader";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
@@ -7,18 +7,11 @@ import type { MessageType } from "@/messages/types/message";
 import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
 import Message from "./message";
 
-const DIRECT_SUGGESTIONS = [
+const SUGGESTIONS = [
   "Explain quantum computing in simple terms",
   "Write a short poem about the ocean",
   "What are the best practices for React?",
   "Help me plan a weekend trip",
-];
-
-const RESEARCH_SUGGESTIONS = [
-  "What are the latest developments in AI regulation?",
-  "Compare the top JavaScript frameworks in 2025",
-  "What is the current state of quantum computing research?",
-  "Summarize recent findings on climate change mitigation",
 ];
 
 interface MessageListProps {
@@ -26,7 +19,6 @@ interface MessageListProps {
   streamingContent?: string;
   isStreaming?: boolean;
   onInsertSuggestion?: (content: string) => void;
-  agentType?: "direct" | "mastra";
   researchPhase?: ResearchPhase;
   toolEvents?: ToolEvent[];
 }
@@ -36,17 +28,9 @@ const MessageList: React.FC<MessageListProps> = ({
   streamingContent,
   isStreaming,
   onInsertSuggestion,
-  agentType = "direct",
   researchPhase,
   toolEvents,
 }) => {
-  const isResearch = agentType === "mastra";
-  const suggestions = isResearch ? RESEARCH_SUGGESTIONS : DIRECT_SUGGESTIONS;
-  const EmptyIcon = isResearch ? Search : MessageSquare;
-  const emptyTitle = isResearch
-    ? "What would you like to research?"
-    : "How can I help you today?";
-
   const isThinking =
     isStreaming &&
     !streamingContent &&
@@ -57,11 +41,13 @@ const MessageList: React.FC<MessageListProps> = ({
     return (
       <div className="flex flex-col items-center justify-center h-full py-12 gap-6">
         <div className="flex flex-col items-center gap-2">
-          <EmptyIcon className="h-10 w-10 text-muted-foreground/50" />
-          <h3 className="text-lg font-medium text-foreground">{emptyTitle}</h3>
+          <MessageSquare className="h-10 w-10 text-muted-foreground/50" />
+          <h3 className="text-lg font-medium text-foreground">
+            How can I help you today?
+          </h3>
         </div>
         <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-          {suggestions.map((suggestion) => (
+          {SUGGESTIONS.map((suggestion) => (
             <PromptSuggestion
               key={suggestion}
               onClick={() => onInsertSuggestion?.(suggestion)}

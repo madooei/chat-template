@@ -10,7 +10,6 @@ import {
   generateChatTitle,
   getMastraEndpoint,
 } from "@/lib/ai";
-import { getAgentConfig } from "@/config/agents";
 import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
 
 function friendlyErrorMessage(err: Error): string {
@@ -62,13 +61,15 @@ export function useChat(chatId: string) {
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, model: string): Promise<boolean> => {
+    async (
+      content: string,
+      model: string,
+      useResearch: boolean,
+    ): Promise<boolean> => {
       const settings = getSettings();
-      const chat = $chats.get().find((c) => c._id === chatId);
-      const agentConfig = getAgentConfig(chat?.agentId);
 
-      // Only require API key for direct chats
-      if (agentConfig.type === "direct" && !settings.openRouterApiKey) {
+      // Only require API key for non-research messages
+      if (!useResearch && !settings.openRouterApiKey) {
         toast.error("API key not configured", {
           description: "Add your OpenRouter API key in Settings",
         });
@@ -132,10 +133,7 @@ export function useChat(chatId: string) {
         abortControllerRef.current = null;
 
         // Auto-generate title for new chats
-        if (
-          latestChat.title === "New Chat" ||
-          latestChat.title === "New Research"
-        ) {
+        if (latestChat.title === "New Chat") {
           if (settings.openRouterApiKey) {
             const allMessages = $messages
               .get()
@@ -176,14 +174,14 @@ export function useChat(chatId: string) {
         toast.error(friendly, { duration: 8000 });
       };
 
-      if (agentConfig.type === "mastra" && agentConfig.mastraAgentId) {
+      if (useResearch) {
         // Two-phase flow: research agent → report agent
         setResearchPhase("researching");
         setToolEvents([]);
 
         void streamMastraChat({
           endpoint: getMastraEndpoint(),
-          agentId: agentConfig.mastraAgentId,
+          agentId: "research-agent",
           messages: history,
           abortSignal: abortController.signal,
           onToolCall: (event) => {

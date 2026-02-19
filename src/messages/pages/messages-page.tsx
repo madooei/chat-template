@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronDown, Search, Share } from "lucide-react";
+import { ArrowLeft, ChevronDown, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,7 +21,6 @@ import { useChat } from "@/messages/hooks/use-chat";
 import MessageList from "@/messages/components/message-list";
 import MessageInput from "@/messages/components/message-input";
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/config/models";
-import { getAgentConfig } from "@/config/agents";
 
 interface MessagesPageProps {
   chatId: string;
@@ -40,14 +39,13 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   } = useChat(chatId);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [inputValue, setInputValue] = useState("");
+  const [researchEnabled, setResearchEnabled] = useState(false);
   const [, setLocation] = useLocation();
 
-  const agentConfig = getAgentConfig(chat?.agentId);
-  const isMastraChat = agentConfig.type === "mastra";
   const activeModel = AVAILABLE_MODELS.find((m) => m.id === model);
 
   const handleSend = async (content: string) => {
-    const accepted = await sendMessage(content, model);
+    const accepted = await sendMessage(content, model, researchEnabled);
     if (accepted) {
       setInputValue("");
     }
@@ -73,36 +71,28 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-lg font-semibold truncate">{chat.title}</h2>
-          {isMastraChat && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary flex-shrink-0">
-              <Search className="h-3 w-3" />
-              Research
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-1">
-          {!isMastraChat && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1">
-                  {activeModel?.label ?? model}
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {AVAILABLE_MODELS.map((m) => (
-                  <DropdownMenuItem key={m.id} onClick={() => setModel(m.id)}>
-                    {m.label}
-                    {m.id === model && (
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        active
-                      </span>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1">
+                {activeModel?.label ?? model}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {AVAILABLE_MODELS.map((m) => (
+                <DropdownMenuItem key={m.id} onClick={() => setModel(m.id)}>
+                  {m.label}
+                  {m.id === model && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      active
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="icon"
@@ -120,7 +110,6 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
             streamingContent={streamingContent}
             isStreaming={isStreaming}
             onInsertSuggestion={setInputValue}
-            agentType={agentConfig.type}
             researchPhase={researchPhase}
             toolEvents={toolEvents}
           />
@@ -136,6 +125,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
         onSend={handleSend}
         isLoading={isStreaming}
         onAbort={abort}
+        researchEnabled={researchEnabled}
+        onResearchToggle={() => setResearchEnabled((prev) => !prev)}
       />
     </div>
   );

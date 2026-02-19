@@ -39,7 +39,7 @@ describe("useChat", () => {
 
     let success = false;
     await act(async () => {
-      success = await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      success = await result.current.sendMessage("Hello", DEFAULT_MODEL, false);
     });
 
     expect(success).toBe(false);
@@ -53,7 +53,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL, false);
     });
 
     const messages = $messages.get();
@@ -79,7 +79,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hello", DEFAULT_MODEL);
+      void result.current.sendMessage("Hello", DEFAULT_MODEL, false);
     });
 
     // isStreaming should be true while stream is in progress
@@ -108,7 +108,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hi", DEFAULT_MODEL);
+      void result.current.sendMessage("Hi", DEFAULT_MODEL, false);
     });
 
     // Simulate chunks arriving during the stream
@@ -139,7 +139,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL, false);
     });
 
     const messages = $messages.get();
@@ -164,7 +164,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hello", DEFAULT_MODEL);
+      void result.current.sendMessage("Hello", DEFAULT_MODEL, false);
     });
 
     act(() => {
@@ -191,7 +191,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL, false);
     });
 
     // Wait for the title generation promise to resolve
@@ -202,57 +202,19 @@ describe("useChat", () => {
     expect(mockGenerateChatTitle).toHaveBeenCalled();
     expect($chats.get()[0].title).toBe("Generated Title");
   });
-
-  it("auto-title triggers when title is 'New Research'", async () => {
-    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "New Research",
-        agentId: "deep-research",
-      }),
-    ]);
-    mockGenerateChatTitle.mockResolvedValue("Research Title");
-
-    // Phase 1 (research agent) calls onFinish with research data
-    // Phase 2 (report agent) calls onFinish with the clean report
-    mockStreamMastraChat.mockImplementation(async (opts) => {
-      opts.onFinish?.("Report text");
-    });
-
-    const { result } = renderHook(() => useChat("chat-1"));
-
-    await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL);
-    });
-
-    // Wait for both phases and title generation to resolve
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 10));
-    });
-
-    expect(mockGenerateChatTitle).toHaveBeenCalled();
-    expect($chats.get()[0].title).toBe("Research Title");
-  });
 });
 
-describe("useChat — Mastra agent path", () => {
-  it("calls streamMastraChat for mastra agent chats", async () => {
+describe("useChat — research path", () => {
+  it("calls streamMastraChat when useResearch is true", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     mockStreamMastraChat.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL, true);
     });
 
     // First call is research-agent (Phase 1)
@@ -262,20 +224,14 @@ describe("useChat — Mastra agent path", () => {
 
   it("passes correct agentId and endpoint for research phase", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     mockStreamMastraChat.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL, true);
     });
 
     const callArgs = mockStreamMastraChat.mock.calls[0][0];
@@ -283,15 +239,9 @@ describe("useChat — Mastra agent path", () => {
     expect(callArgs.endpoint).toBe("/mastra");
   });
 
-  it("does not require an API key for mastra chats", async () => {
+  it("does not require an API key for research messages", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     mockStreamMastraChat.mockResolvedValue(undefined);
 
@@ -299,7 +249,7 @@ describe("useChat — Mastra agent path", () => {
 
     let success = false;
     await act(async () => {
-      success = await result.current.sendMessage("Hello", DEFAULT_MODEL);
+      success = await result.current.sendMessage("Hello", DEFAULT_MODEL, true);
     });
 
     expect(success).toBe(true);
@@ -308,15 +258,9 @@ describe("useChat — Mastra agent path", () => {
 });
 
 describe("useChat — two-phase research flow", () => {
-  it("calls research-agent then report-agent sequentially for mastra chats", async () => {
+  it("calls research-agent then report-agent sequentially when useResearch is true", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     // Phase 1: research agent finishes with research data
     // Phase 2: report agent finishes with clean report
@@ -334,7 +278,7 @@ describe("useChat — two-phase research flow", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("What is AI?", DEFAULT_MODEL);
+      await result.current.sendMessage("What is AI?", DEFAULT_MODEL, true);
     });
 
     expect(mockStreamMastraChat).toHaveBeenCalledTimes(2);
@@ -353,13 +297,7 @@ describe("useChat — two-phase research flow", () => {
 
   it("researchPhase transitions: idle → researching → reporting → idle", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     const phaseHistory: string[] = [];
 
@@ -386,7 +324,7 @@ describe("useChat — two-phase research flow", () => {
     expect(result.current.researchPhase).toBe("idle");
 
     act(() => {
-      void result.current.sendMessage("Test", DEFAULT_MODEL);
+      void result.current.sendMessage("Test", DEFAULT_MODEL, true);
     });
 
     // After sendMessage, should be researching
@@ -408,13 +346,7 @@ describe("useChat — two-phase research flow", () => {
 
   it("abort during research phase resets all state", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     let resolveStream: () => void;
     const streamPromise = new Promise<void>((resolve) => {
@@ -428,7 +360,7 @@ describe("useChat — two-phase research flow", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hello", DEFAULT_MODEL);
+      void result.current.sendMessage("Hello", DEFAULT_MODEL, true);
     });
 
     expect(result.current.researchPhase).toBe("researching");
@@ -449,13 +381,7 @@ describe("useChat — two-phase research flow", () => {
 
   it("only report text (not research JSON) is saved as assistant message", async () => {
     $settings.set({ displayName: "", openRouterApiKey: "" });
-    $chats.set([
-      createTestChat({
-        _id: "chat-1",
-        title: "Research",
-        agentId: "deep-research",
-      }),
-    ]);
+    $chats.set([createTestChat({ _id: "chat-1", title: "Research" })]);
 
     mockStreamMastraChat
       .mockImplementationOnce(async (opts) => {
@@ -470,7 +396,7 @@ describe("useChat — two-phase research flow", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Test question", DEFAULT_MODEL);
+      await result.current.sendMessage("Test question", DEFAULT_MODEL, true);
     });
 
     const messages = $messages.get();
