@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowDownUp, PlusCircle } from "lucide-react";
+import { ArrowDownUp, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ChatList from "@/chats/components/chat-list";
@@ -23,15 +23,31 @@ const ListChatsPage: React.FC<ListChatsPageProps> = ({ activeChatId }) => {
     }
   };
 
+  const handleNewResearch = async () => {
+    const chatId = await createChat({
+      title: "New Research",
+      agentId: "deep-research",
+    });
+    if (chatId) {
+      setLocation(`/chats/${chatId}/messages`);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-none p-3 md:p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Chats</h2>
-          <Button variant="outline" size="sm" onClick={handleNewChat}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Chat
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={handleNewChat}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Chat
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleNewResearch}>
+              <Search className="mr-2 h-4 w-4" />
+              Research
+            </Button>
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-3">
           <Input

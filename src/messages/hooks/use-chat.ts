@@ -4,7 +4,13 @@ import { getSettings } from "@/settings/store/settings";
 import { addMessage } from "@/messages/store/message";
 import { $messages } from "@/messages/store/message";
 import { $chats, updateChat } from "@/chats/store/chat";
-import { streamChat, generateChatTitle } from "@/lib/ai";
+import {
+  streamChat,
+  streamMastraChat,
+  generateChatTitle,
+  getMastraEndpoint,
+} from "@/lib/ai";
+import { getAgentConfig } from "@/config/agents";
 
 function friendlyErrorMessage(err: Error): string {
   const msg = err.message.toLowerCase();
@@ -30,6 +36,9 @@ function friendlyErrorMessage(err: Error): string {
   ) {
     return "Network error. Check your internet connection and try again.";
   }
+  if (msg.includes("mastra")) {
+    return "Could not reach the Mastra server. Make sure it is running.";
+  }
   return "Something went wrong. Please try again.";
 }
 
@@ -52,8 +61,11 @@ export function useChat(chatId: string) {
   const sendMessage = useCallback(
     async (content: string, model: string): Promise<boolean> => {
       const settings = getSettings();
+      const chat = $chats.get().find((c) => c._id === chatId);
+      const agentConfig = getAgentConfig(chat?.agentId);
 
-      if (!settings.openRouterApiKey) {
+      // Only require API key for direct chats
+      if (agentConfig.type === "direct" && !settings.openRouterApiKey) {
         toast.error("API key not configured", {
           description: "Add your OpenRouter API key in Settings",
         });
@@ -90,38 +102,39 @@ export function useChat(chatId: string) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      void streamChat({
-        apiKey: settings.openRouterApiKey,
-        model,
-        messages: history,
-        abortSignal: abortController.signal,
-        onChunk: (accumulated) => {
-          if (requestIdRef.current !== requestId) return;
-          setStreamingContent(accumulated);
-        },
-        onFinish: (fullText) => {
-          if (requestIdRef.current !== requestId) return;
+      const onChunk = (accumulated: string) => {
+        if (requestIdRef.current !== requestId) return;
+        setStreamingContent(accumulated);
+      };
 
-          const chat = $chats.get().find((c) => c._id === chatId);
-          if (!chat) {
-            setStreamingContent("");
-            setIsStreaming(false);
-            abortControllerRef.current = null;
-            return;
-          }
+      const onFinish = (fullText: string) => {
+        if (requestIdRef.current !== requestId) return;
 
-          addMessage({
-            _id: crypto.randomUUID(),
-            chatId,
-            role: "assistant",
-            content: fullText,
-            _creationTime: Date.now(),
-          });
+        const latestChat = $chats.get().find((c) => c._id === chatId);
+        if (!latestChat) {
           setStreamingContent("");
           setIsStreaming(false);
           abortControllerRef.current = null;
+          return;
+        }
 
-          if (chat.title === "New Chat") {
+        addMessage({
+          _id: crypto.randomUUID(),
+          chatId,
+          role: "assistant",
+          content: fullText,
+          _creationTime: Date.now(),
+        });
+        setStreamingContent("");
+        setIsStreaming(false);
+        abortControllerRef.current = null;
+
+        // Auto-generate title for new chats
+        if (
+          latestChat.title === "New Chat" ||
+          latestChat.title === "New Research"
+        ) {
+          if (settings.openRouterApiKey) {
             const allMessages = $messages
               .get()
               .filter((m) => m.chatId === chatId)
@@ -133,25 +146,53 @@ export function useChat(chatId: string) {
               messages: allMessages,
             }).then((title) => {
               if (requestIdRef.current !== requestId || !title) return;
-
-              const latestChat = $chats.get().find((c) => c._id === chatId);
-              if (latestChat) {
-                updateChat({ ...latestChat, title });
+              const currentChat = $chats.get().find((c) => c._id === chatId);
+              if (currentChat) {
+                updateChat({ ...currentChat, title });
               }
             });
+          } else {
+            // Fallback: use first few words of user message as title
+            const words = content.split(/\s+/).slice(0, 6).join(" ");
+            const fallbackTitle =
+              words.length > 40 ? words.slice(0, 40) + "..." : words;
+            updateChat({ ...latestChat, title: fallbackTitle });
           }
-        },
-        onError: (err) => {
-          if (requestIdRef.current !== requestId) return;
-          setError(err);
-          setStreamingContent("");
-          setIsStreaming(false);
-          abortControllerRef.current = null;
-          console.error("[useChat] streaming failed:", err);
-          const friendly = friendlyErrorMessage(err);
-          toast.error(friendly, { duration: 8000 });
-        },
-      });
+        }
+      };
+
+      const onError = (err: Error) => {
+        if (requestIdRef.current !== requestId) return;
+        setError(err);
+        setStreamingContent("");
+        setIsStreaming(false);
+        abortControllerRef.current = null;
+        console.error("[useChat] streaming failed:", err);
+        const friendly = friendlyErrorMessage(err);
+        toast.error(friendly, { duration: 8000 });
+      };
+
+      if (agentConfig.type === "mastra" && agentConfig.mastraAgentId) {
+        void streamMastraChat({
+          endpoint: getMastraEndpoint(),
+          agentId: agentConfig.mastraAgentId,
+          messages: history,
+          abortSignal: abortController.signal,
+          onChunk,
+          onFinish,
+          onError,
+        });
+      } else {
+        void streamChat({
+          apiKey: settings.openRouterApiKey,
+          model,
+          messages: history,
+          abortSignal: abortController.signal,
+          onChunk,
+          onFinish,
+          onError,
+        });
+      }
 
       return true;
     },

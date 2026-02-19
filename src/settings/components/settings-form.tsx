@@ -16,17 +16,22 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
   const [openRouterApiKey, setOpenRouterApiKey] = useState(
     initialValues.openRouterApiKey,
   );
+  const [mastraEndpoint, setMastraEndpoint] = useState(
+    initialValues.mastraEndpoint ?? "",
+  );
   const [showApiKey, setShowApiKey] = useState(false);
 
   const hasChanges =
     displayName !== initialValues.displayName ||
-    openRouterApiKey !== initialValues.openRouterApiKey;
+    openRouterApiKey !== initialValues.openRouterApiKey ||
+    mastraEndpoint !== (initialValues.mastraEndpoint ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       displayName: displayName.trim(),
       openRouterApiKey: openRouterApiKey.trim(),
+      mastraEndpoint: mastraEndpoint.trim() || undefined,
     });
   };
 
@@ -77,6 +82,24 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
         <p className="text-xs text-amber-700 dark:text-amber-400">
           Warning: Client-side API keys are subject to XSS attacks. Use this for
           local development only.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="mastraEndpoint" className="text-sm font-medium">
+          Mastra Server URL
+        </label>
+        <input
+          id="mastraEndpoint"
+          type="text"
+          value={mastraEndpoint}
+          onChange={(e) => setMastraEndpoint(e.target.value)}
+          placeholder="http://localhost:4111"
+          className="rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+        <p className="text-xs text-muted-foreground">
+          URL of the Mastra server for agent-powered chats. Leave blank to use
+          the default.
         </p>
       </div>
 

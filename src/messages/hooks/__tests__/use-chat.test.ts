@@ -13,11 +13,15 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/lib/ai", () => ({
   streamChat: vi.fn(),
+  streamMastraChat: vi.fn(),
   generateChatTitle: vi.fn(),
+  getMastraEndpoint: vi.fn(() => "/mastra"),
 }));
 
-const { streamChat, generateChatTitle } = await import("@/lib/ai");
+const { streamChat, streamMastraChat, generateChatTitle } =
+  await import("@/lib/ai");
 const mockStreamChat = vi.mocked(streamChat);
+const mockStreamMastraChat = vi.mocked(streamMastraChat);
 const mockGenerateChatTitle = vi.mocked(generateChatTitle);
 
 beforeEach(() => {
@@ -197,5 +201,104 @@ describe("useChat", () => {
 
     expect(mockGenerateChatTitle).toHaveBeenCalled();
     expect($chats.get()[0].title).toBe("Generated Title");
+  });
+
+  it("auto-title triggers when title is 'New Research'", async () => {
+    $settings.set({ displayName: "", openRouterApiKey: "test-key" });
+    $chats.set([
+      createTestChat({
+        _id: "chat-1",
+        title: "New Research",
+        agentId: "deep-research",
+      }),
+    ]);
+    mockGenerateChatTitle.mockResolvedValue("Research Title");
+
+    mockStreamMastraChat.mockImplementation(async (opts) => {
+      opts.onFinish?.("Response");
+    });
+
+    const { result } = renderHook(() => useChat("chat-1"));
+
+    await act(async () => {
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+    });
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    expect(mockGenerateChatTitle).toHaveBeenCalled();
+    expect($chats.get()[0].title).toBe("Research Title");
+  });
+});
+
+describe("useChat — Mastra agent path", () => {
+  it("calls streamMastraChat for mastra agent chats", async () => {
+    $settings.set({ displayName: "", openRouterApiKey: "" });
+    $chats.set([
+      createTestChat({
+        _id: "chat-1",
+        title: "Research",
+        agentId: "deep-research",
+      }),
+    ]);
+
+    mockStreamMastraChat.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useChat("chat-1"));
+
+    await act(async () => {
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+    });
+
+    expect(mockStreamMastraChat).toHaveBeenCalledTimes(1);
+    expect(mockStreamChat).not.toHaveBeenCalled();
+  });
+
+  it("passes correct agentId and endpoint", async () => {
+    $settings.set({ displayName: "", openRouterApiKey: "" });
+    $chats.set([
+      createTestChat({
+        _id: "chat-1",
+        title: "Research",
+        agentId: "deep-research",
+      }),
+    ]);
+
+    mockStreamMastraChat.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useChat("chat-1"));
+
+    await act(async () => {
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
+    });
+
+    const callArgs = mockStreamMastraChat.mock.calls[0][0];
+    expect(callArgs.agentId).toBe("research-agent");
+    expect(callArgs.endpoint).toBe("/mastra");
+  });
+
+  it("does not require an API key for mastra chats", async () => {
+    $settings.set({ displayName: "", openRouterApiKey: "" });
+    $chats.set([
+      createTestChat({
+        _id: "chat-1",
+        title: "Research",
+        agentId: "deep-research",
+      }),
+    ]);
+
+    mockStreamMastraChat.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useChat("chat-1"));
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.sendMessage("Hello", DEFAULT_MODEL);
+    });
+
+    expect(success).toBe(true);
+    expect(mockStreamMastraChat).toHaveBeenCalled();
   });
 });
