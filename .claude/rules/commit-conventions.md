@@ -11,3 +11,8 @@ Examples:
 - `Add login form component (#5)`
 - `Fix redirect loop on logout (#12)`
 - `Set up CI pipeline (#6)`
+
+Do not co-sign the commit! For example, do not end the commit with something like this:
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+

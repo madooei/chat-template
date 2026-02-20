@@ -2,9 +2,10 @@
 
 Brief "How To" guides that explain both _what_ and _why_ for each topic. Aimed at students and anyone picking up this template for the first time. Each guide is ~100 lines — enough to understand the concept and get productive, not a reference manual.
 
-| Guide                           | What it covers                                                              |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| [Claude Code](./claude-code.md) | The `.claude/` directory — rules, skills, commands, agents, hooks, settings |
-| [Convex](./convex.md)           | Convex backend — what it is, dev setup, code organization, production       |
-| [Testing](./testing.md)         | Vitest, React Testing Library, Playwright, and AI-assisted test generation  |
-| [Deployment](./deployment.md)   | Setting up Netlify, GitHub secrets, CI/CD workflows, SPA routing            |
+| Guide                                                | What it covers                                                                     |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [AI-Assisted Workflow](ai-assisted-workflow.md)      | Using Claude Code skills to plan iterations, create issues, branch, commit, and PR |
+| [Claude Code](./claude-code.md)                      | The `.claude/` directory — rules, skills, commands, agents, hooks, settings        |
+| [Convex](./convex.md)                                | Convex backend — what it is, dev setup, code organization, production              |
+| [Testing](./testing.md)                              | Vitest, React Testing Library, Playwright, and AI-assisted test generation         |
+| [Deployment](./deployment.md)                        | Setting up Netlify, GitHub secrets, CI/CD workflows, SPA routing                   |

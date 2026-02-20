@@ -4,8 +4,10 @@
 
 ### Create a PR
 
+Use the PR template from `.github/PULL_REQUEST_TEMPLATE.md` for the body structure:
+
 ```bash
-gh pr create --title "Title" --body "Body" --reviewer "username"
+gh pr create --title "Title" --body "body matching the template" --reviewer "username"
 ```
 
 ### List open PRs
@@ -32,27 +34,13 @@ gh pr diff <number> --stat
 gh pr merge <number> --merge --delete-branch
 ```
 
-## Branch Naming Validation
-
-Before creating a PR, verify the branch name matches the convention:
-
-```plaintext
-<author>/<type>/issue-<number>-<short-description>
-```
-
-Check with:
-
-```bash
-git branch --show-current
-```
-
 ## Collaborative Feature Branch Flow
 
 ```plaintext
 master
-  └── team/feature/issue-5-user-auth        (feature branch)
-        ├── alice/feature/issue-5-login-form   (sub-branch)
-        └── bob/feature/issue-5-auth-api       (sub-branch)
+  └── feature-branch (created by feature owner)
+        ├── contributor-1-branch → PR into feature-branch
+        └── contributor-2-branch → PR into feature-branch
 ```
 
 ### Create the feature branch
@@ -60,26 +48,26 @@ master
 ```bash
 git checkout master
 git pull
-git checkout -b team/feature/issue-5-user-auth
-git push -u origin team/feature/issue-5-user-auth
+git checkout -b <owner>/<type>/issue-<number>-<description>
+git push -u origin <owner>/<type>/issue-<number>-<description>
 ```
 
 ### Create a sub-branch
 
 ```bash
-git checkout team/feature/issue-5-user-auth
+git checkout <feature-branch>
 git pull
-git checkout -b alice/feature/issue-5-login-form
+git checkout -b <author>/<type>/issue-<number>-<description>
 ```
 
 ### PR for sub-branch (targets feature branch, not master)
 
 ```bash
-gh pr create --base team/feature/issue-5-user-auth --title "Add login form" --body "Closes #5 (partial)"
+gh pr create --base <feature-branch> --title "Title" --body "Closes #N (partial)"
 ```
 
 ### Final PR to master
 
 ```bash
-gh pr create --base master --title "User authentication" --body "Closes #5"
+gh pr create --base master --title "Feature title" --body "Closes #N"
 ```
