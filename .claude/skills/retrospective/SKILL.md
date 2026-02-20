@@ -22,10 +22,11 @@ allowed-tools:
 ## Process
 
 1. Ask for the iteration number (or infer from recent milestones)
-2. Review what was accomplished by reading:
+2. Gather context by reading:
    - The iteration plan (`docs/iteration-<number>-plan.md`)
    - Closed issues and merged PRs in the iteration's milestone
-3. Create a GitHub issue titled **"Iteration X Retrospective"**
+3. Create a GitHub issue titled **"Iteration X Retrospective"** with the correct format (see below), including a brief summary of what was accomplished based on the data gathered
+4. Tell the team to fill in the three sections themselves — the AI cannot know what went well or didn't from the team's perspective
 
 ## Issue Format
 
@@ -56,3 +57,4 @@ allowed-tools:
 - Each section should have at least 2-3 bullet points
 - The retrospective is due **Monday end-of-day** after the iteration ends
 - Encourage the team to comment on the issue with their own reflections
+- Leave the issue open — the instructor closes it after reviewing
