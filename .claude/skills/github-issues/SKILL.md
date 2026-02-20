@@ -27,7 +27,7 @@ Every issue must have:
 3. **Acceptance criteria** — checklist of testable criteria
 4. **Label** — exactly one of: `feature`, `task`, or `bug`
 5. **Milestone** — the current iteration (e.g., "Iteration 1")
-6. **Assignees** — 2 people for features, 1 for tasks/bugs
+6. **Assignees** — see ownership rules below
 
 ## Labels
 
@@ -55,9 +55,36 @@ Milestones are named "Iteration 1" through "Iteration 4". Create them if they do
 gh api repos/{owner}/{repo}/milestones -f title="Iteration 1"
 ```
 
+## Issue Ownership
+
+- **Feature issues** — assign one owner + one supporting (up to three if the feature is large)
+- **Task and bug issues** — assign one person (optional supporting)
+- **Retrospective issues** — assign all team members
+
+If you contribute to an issue but aren't assigned, analytics won't attribute the work to you.
+
+## Creating Issues via CLI
+
+Read the matching template in `.github/ISSUE_TEMPLATE/` (feature.yml, task.yml, or bug.yml) and use its structure for the `--body`. Example:
+
+```bash
+gh issue create \
+  --title "Add search-by-title to items list endpoint" \
+  --label "feature" \
+  --milestone "Iteration 1" \
+  --assignee "owner,supporting" \
+  --body "## Description
+Add a query parameter to the items endpoint that filters by title.
+
+## Acceptance Criteria
+- [ ] Search is case-insensitive
+- [ ] Empty query returns all items
+- [ ] Tests added for all cases"
+```
+
+For task and bug issues, follow the same pattern using the corresponding template structure.
+
 ## Rules
 
 - Only create issues for the **current** iteration — never for future ones
-- Feature issues always get **2 assignees** (collaborative work)
-- Task and bug issues get **1 assignee**
 - Use the GitHub issue templates (feature, task, or bug) when creating from the UI

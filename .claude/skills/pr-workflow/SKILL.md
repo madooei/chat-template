@@ -66,10 +66,15 @@ Closes #<issue-number>
 
 ## Collaborative Feature Branch Workflow
 
-For features that involve multiple contributors:
+When multiple people are actively coding the **same feature** in parallel:
 
-1. Create a feature branch from `master` (e.g., `team/feature/issue-5-user-auth`)
+1. Feature owner creates a feature branch from `master`
 2. Each contributor creates a sub-branch off the feature branch
 3. Contributors open PRs targeting the feature branch (not master)
-4. Review and merge sub-branches into the feature branch
-5. When the feature is complete, open a final PR from the feature branch to `master`
+4. Feature owner reviews and merges contributor PRs
+5. Each contributor is responsible for resolving conflicts in their own PR
+6. When complete, feature owner PRs the feature branch into `master`
+
+If only one person is implementing a feature, skip this — PR directly to `master`.
+
+See [reference.md](reference.md) for the git commands.
