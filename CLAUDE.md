@@ -1,5 +1,7 @@
 # Project Configuration
 
+**Important:**  Run `pnpm validate` after you make any changes to the code. It runs the type-check, lint, and test commands.
+
 ## Project Description
 
 A "bring your own API key" AI chat application. Users pick a provider, supply their own key, and chat — all running locally with no backend. Phase 1 of a multi-phase template.

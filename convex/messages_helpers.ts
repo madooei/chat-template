@@ -1,4 +1,5 @@
 import type { Id, Doc } from "./_generated/dataModel";
+import type { DatabaseWriter } from "./_generated/server";
 import type { AuthQueryCtx, AuthMutationCtx } from "./lib";
 
 // ── Read helpers ─────────────────────────────────────────────────
@@ -22,6 +23,30 @@ export async function getMessageById(
 
 // ── Write helpers ────────────────────────────────────────────────
 
+/** Low-level insert — every message creation goes through here. */
+export async function insertMessage(
+  db: DatabaseWriter,
+  fields: {
+    chatId: Id<"chats">;
+    userId: Id<"users">;
+    role: "user" | "assistant";
+    content: string;
+    model?: string;
+    clientId?: string;
+    isComplete?: boolean;
+  },
+): Promise<Id<"messages">> {
+  return db.insert("messages", {
+    chatId: fields.chatId,
+    userId: fields.userId,
+    role: fields.role,
+    content: fields.content,
+    model: fields.model,
+    clientId: fields.clientId,
+    isComplete: fields.isComplete,
+  });
+}
+
 export async function createMessage(
   ctx: AuthMutationCtx,
   fields: {
@@ -29,15 +54,11 @@ export async function createMessage(
     role: "user" | "assistant";
     content: string;
     model?: string;
+    clientId?: string;
+    isComplete?: boolean;
   },
 ): Promise<Id<"messages">> {
-  return ctx.db.insert("messages", {
-    chatId: fields.chatId,
-    role: fields.role,
-    content: fields.content,
-    model: fields.model,
-    userId: ctx.userId,
-  });
+  return insertMessage(ctx.db, { ...fields, userId: ctx.userId });
 }
 
 export async function deleteMessage(
@@ -57,6 +78,8 @@ export function toMessageOut(message: Doc<"messages">) {
     content: message.content,
     model: message.model,
     userId: message.userId,
+    clientId: message.clientId,
+    isComplete: message.isComplete,
     _creationTime: message._creationTime,
   };
 }

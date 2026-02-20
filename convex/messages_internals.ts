@@ -1,5 +1,54 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
+import { insertMessage } from "./messages_helpers";
+
+/**
+ * Create a placeholder assistant message before streaming begins.
+ * Returns the message ID for subsequent updates.
+ */
+export const createStreamingMessage = internalMutation({
+  args: {
+    chatId: v.id("chats"),
+    userId: v.id("users"),
+    model: v.optional(v.string()),
+  },
+  handler: async (ctx, { chatId, userId, model }) => {
+    return insertMessage(ctx.db, {
+      chatId,
+      userId,
+      role: "assistant",
+      content: "",
+      model,
+      isComplete: false,
+    });
+  },
+});
+
+/**
+ * Flush accumulated streaming content to an existing message.
+ */
+export const updateStreamingContent = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    content: v.string(),
+  },
+  handler: async (ctx, { messageId, content }) => {
+    await ctx.db.patch(messageId, { content });
+  },
+});
+
+/**
+ * Mark a streaming message as complete with final content.
+ */
+export const completeStreamingMessage = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    content: v.string(),
+  },
+  handler: async (ctx, { messageId, content }) => {
+    await ctx.db.patch(messageId, { content, isComplete: true });
+  },
+});
 
 /**
  * Save the assistant's response after the stream completes.
@@ -12,7 +61,7 @@ export const saveAssistantMessage = internalMutation({
     model: v.optional(v.string()),
   },
   handler: async (ctx, { chatId, userId, content, model }) => {
-    await ctx.db.insert("messages", {
+    await insertMessage(ctx.db, {
       chatId,
       userId,
       role: "assistant",

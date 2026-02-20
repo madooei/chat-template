@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { useMutation } from "convex/react";
+import { useSelector } from "@legendapp/state/react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -7,6 +8,17 @@ import { useAuthToken } from "@/hooks/use-auth-token";
 import { streamChatSSE } from "@/lib/sse";
 import { CONVEX_SITE_URL } from "@/lib/convex";
 import type { ToolCallPart } from "@/messages/types/tool-call";
+import {
+  startStreaming,
+  appendStreamingContent,
+  setStreamingMessageId,
+  setStreamingToolCalls,
+  clearStreaming,
+  addOptimisticMessage,
+  removeOptimisticMessage,
+  chatMessages$,
+  getStreamingState,
+} from "@/messages/store/messages";
 
 function friendlyErrorMessage(err: Error): string {
   const msg = err.message.toLowerCase();
@@ -35,16 +47,57 @@ function friendlyErrorMessage(err: Error): string {
   return "Something went wrong. Please try again.";
 }
 
+/**
+ * Wait for a persisted message with the given ID to appear with isComplete !== false.
+ * Uses `!== false` (not `=== true`) for backward compatibility with messages that
+ * predate the isComplete field — those have `undefined`, which should count as complete.
+ * Polls at 50ms intervals with a 5s timeout.
+ */
+function waitForPersistedMessage(
+  chatId: string,
+  messageId: string,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    const TIMEOUT = 5000;
+    const INTERVAL = 50;
+
+    const check = () => {
+      const persisted = chatMessages$[chatId]?.persisted?.peek() ?? [];
+      const found = persisted.find(
+        (m) => m._id === messageId && m.isComplete !== false,
+      );
+      if (found) {
+        resolve(true);
+        return;
+      }
+      if (Date.now() - startTime >= TIMEOUT) {
+        resolve(false);
+        return;
+      }
+      setTimeout(check, INTERVAL);
+    };
+    check();
+  });
+}
+
 export function useChat(chatId: string) {
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [error, setError] = useState<Error | null>(null);
-  const [toolCalls, setToolCalls] = useState<ToolCallPart[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
   const toolCallsRef = useRef<Map<string, ToolCallPart>>(new Map());
   const token = useAuthToken();
   const createMessage = useMutation(api.messages_mutations.create);
+
+  // Read streaming state from Legend-State
+  const isStreaming = useSelector(
+    () => chatMessages$[chatId]?.streaming?.isStreaming?.get() ?? false,
+  );
+  const streamingContent = useSelector(
+    () => chatMessages$[chatId]?.streaming?.content?.get() ?? "",
+  );
+  const toolCalls = useSelector(
+    () => chatMessages$[chatId]?.streaming?.toolCalls?.get() ?? [],
+  );
 
   useEffect(() => {
     return () => {
@@ -71,24 +124,36 @@ export function useChat(chatId: string) {
         abortControllerRef.current = null;
       }
 
-      // Save user message via Convex mutation (appears immediately via reactive query)
+      // Local-first: add optimistic user message immediately
+      const clientId = crypto.randomUUID();
+      addOptimisticMessage(chatId, clientId, {
+        _id: `optimistic-${clientId}`,
+        chatId,
+        role: "user",
+        content,
+        clientId,
+        _creationTime: Date.now(),
+      });
+
+      // Persist user message via Convex mutation — must complete before starting
+      // the SSE stream so the server reads the latest message from the DB.
       try {
         await createMessage({
           chatId: chatId as Id<"chats">,
           role: "user",
           content,
+          clientId,
         });
-      } catch (err) {
+      } catch (err: unknown) {
+        removeOptimisticMessage(chatId, clientId);
         toast.error("Failed to save message", {
           description: (err as Error).message,
         });
         return false;
       }
 
-      setIsStreaming(true);
-      setStreamingContent("");
-      setError(null);
-      setToolCalls([]);
+      // Set up streaming state
+      startStreaming(chatId);
       toolCallsRef.current = new Map();
 
       const requestId = requestIdRef.current + 1;
@@ -97,15 +162,19 @@ export function useChat(chatId: string) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      void streamChatSSE({
+      streamChatSSE({
         siteUrl: CONVEX_SITE_URL,
         token,
         chatId,
         model,
         signal: abortController.signal,
+        onMessageCreated: (data) => {
+          if (requestIdRef.current !== requestId) return;
+          setStreamingMessageId(chatId, data.messageId);
+        },
         onChunk: (accumulated) => {
           if (requestIdRef.current !== requestId) return;
-          setStreamingContent(accumulated);
+          appendStreamingContent(chatId, accumulated);
         },
         onToolCall: ({ toolCallId, toolName, args }) => {
           if (requestIdRef.current !== requestId) return;
@@ -116,7 +185,10 @@ export function useChat(chatId: string) {
             args,
           };
           toolCallsRef.current.set(toolCallId, part);
-          setToolCalls(Array.from(toolCallsRef.current.values()));
+          setStreamingToolCalls(
+            chatId,
+            Array.from(toolCallsRef.current.values()),
+          );
         },
         onToolResult: ({ toolCallId, toolName, result }) => {
           if (requestIdRef.current !== requestId) return;
@@ -129,30 +201,40 @@ export function useChat(chatId: string) {
             result,
           };
           toolCallsRef.current.set(toolCallId, part);
-          setToolCalls(Array.from(toolCallsRef.current.values()));
+          setStreamingToolCalls(
+            chatId,
+            Array.from(toolCallsRef.current.values()),
+          );
         },
         onDone: () => {
           if (requestIdRef.current !== requestId) return;
-          setStreamingContent("");
-          setIsStreaming(false);
-          setToolCalls([]);
-          toolCallsRef.current = new Map();
           abortControllerRef.current = null;
-          // No need to save assistant message — the server already did it.
-          // Convex reactive query will deliver the persisted message.
+          toolCallsRef.current = new Map();
+
+          // Wait for persisted message before clearing streaming state
+          const { messageId } = getStreamingState(chatId);
+          if (messageId) {
+            void waitForPersistedMessage(chatId, messageId).then(() => {
+              if (requestIdRef.current !== requestId) return;
+              clearStreaming(chatId);
+            });
+          } else {
+            clearStreaming(chatId);
+          }
         },
         onError: (err) => {
           if (requestIdRef.current !== requestId) return;
-          setError(err);
-          setStreamingContent("");
-          setIsStreaming(false);
-          setToolCalls([]);
-          toolCallsRef.current = new Map();
           abortControllerRef.current = null;
+          toolCallsRef.current = new Map();
+          clearStreaming(chatId);
           console.error("[useChat] streaming failed:", err);
           const friendly = friendlyErrorMessage(err);
           toast.error(friendly, { duration: 8000 });
         },
+      }).catch((err: unknown) => {
+        // Safety net: if onError itself throws, ensure streaming state is cleaned up.
+        clearStreaming(chatId);
+        console.error("[useChat] unexpected streaming error:", err);
       });
 
       return true;
@@ -164,17 +246,15 @@ export function useChat(chatId: string) {
     requestIdRef.current += 1;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
-    setStreamingContent("");
-    setIsStreaming(false);
-    setToolCalls([]);
     toolCallsRef.current = new Map();
-  }, []);
+    clearStreaming(chatId);
+  }, [chatId]);
 
   return {
     sendMessage,
     isStreaming,
     streamingContent,
-    error,
+    error: null as Error | null,
     abort,
     toolCalls,
   };

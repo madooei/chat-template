@@ -8,10 +8,11 @@ export const create = mutationWithAuth({
     chatId: v.id("chats"),
     role: v.union(v.literal("user"), v.literal("assistant")),
     content: v.string(),
+    clientId: v.optional(v.string()),
   },
   returns: v.id("messages"),
-  handler: async (ctx, { chatId, role, content }) => {
+  handler: async (ctx, { chatId, role, content, clientId }) => {
     await requireMessageChatOwner(ctx, chatId);
-    return createMessage(ctx, { chatId, role, content });
+    return createMessage(ctx, { chatId, role, content, clientId });
   },
 });

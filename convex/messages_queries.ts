@@ -14,6 +14,8 @@ export const getByChat = queryWithAuth({
       content: v.string(),
       model: v.optional(v.string()),
       userId: v.id("users"),
+      clientId: v.optional(v.string()),
+      isComplete: v.optional(v.boolean()),
       _creationTime: v.number(),
     }),
   ),

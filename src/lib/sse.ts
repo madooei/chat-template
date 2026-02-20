@@ -10,6 +10,10 @@ interface ToolResultData {
   result: Record<string, unknown>;
 }
 
+interface MessageCreatedData {
+  messageId: string;
+}
+
 interface StreamChatSSEOptions {
   siteUrl: string;
   token: string;
@@ -21,6 +25,7 @@ interface StreamChatSSEOptions {
   onError?: (error: Error) => void;
   onToolCall?: (data: ToolCallData) => void;
   onToolResult?: (data: ToolResultData) => void;
+  onMessageCreated?: (data: MessageCreatedData) => void;
 }
 
 /**
@@ -37,6 +42,7 @@ export async function streamChatSSE({
   onError,
   onToolCall,
   onToolResult,
+  onMessageCreated,
 }: StreamChatSSEOptions): Promise<void> {
   try {
     const response = await fetch(`${siteUrl}/api/chat`, {
@@ -110,6 +116,11 @@ export async function streamChatSSE({
                 break;
               case "tool-result":
                 onToolResult?.(JSON.parse(eventData) as ToolResultData);
+                break;
+              case "message-created":
+                onMessageCreated?.(
+                  JSON.parse(eventData) as MessageCreatedData,
+                );
                 break;
             }
 

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import type { ChatType } from "@/chats/types/chat";
 import { useMutationChat } from "@/chats/hooks/use-mutation-chat";
-import { useQueryMessages } from "@/messages/hooks/use-query-messages";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
@@ -30,7 +30,12 @@ const EditChatDialog: React.FC<EditChatDialogProps> = ({
   const [title, setTitle] = useState(chat.title);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const { edit: editChat } = useMutationChat(chat._id);
-  const { data: chatMessages } = useQueryMessages(chat._id);
+  // Use direct useQuery instead of useQueryMessages to avoid its unmount
+  // disposal side-effect, which would wipe the shared message store for
+  // still-mounted consumers (e.g., the active chat view).
+  const chatMessages = useQuery(api.messages_queries.getByChat, {
+    chatId: chat._id as Id<"chats">,
+  }) ?? [];
   const suggestTitle = useAction(api.chats_actions.suggestTitle);
 
   const canSuggest = chatMessages.length > 0;

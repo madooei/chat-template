@@ -78,7 +78,28 @@ app.post("/api/chat", async (c) => {
   const openrouter = createOpenRouter({ apiKey });
 
   return streamSSE(c, async (stream) => {
+    // Flush configuration
+    const FLUSH_INTERVAL_MS = 200;
+    const MIN_FLUSH_SIZE = 100;
+
+    let messageId: Awaited<
+      ReturnType<typeof ctx.runMutation>
+    > | null = null;
+    let fullText = "";
+
     try {
+      // Create placeholder assistant message before streaming begins
+      messageId = await ctx.runMutation(
+        internal.messages_internals.createStreamingMessage,
+        { chatId, userId, model },
+      );
+
+      // Notify client of the created message ID
+      await stream.writeSSE({
+        data: JSON.stringify({ messageId }),
+        event: "message-created",
+      });
+
       console.log("[chat] tools enabled:", Object.keys(weatherTools));
       const result = streamText({
         model: openrouter.chat(model),
@@ -97,17 +118,33 @@ app.post("/api/chat", async (c) => {
         },
       });
 
-      let fullText = "";
+      fullText = "";
+      let unflushedLength = 0;
+      let lastFlushTime = Date.now();
 
       for await (const part of (await result).fullStream) {
         console.log("[chat] stream part:", part.type);
         switch (part.type) {
           case "text-delta":
             fullText += part.text;
+            unflushedLength += part.text.length;
             await stream.writeSSE({
               data: part.text,
               event: "text-delta",
             });
+
+            // Periodic DB flush
+            if (
+              unflushedLength >= MIN_FLUSH_SIZE &&
+              Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS
+            ) {
+              await ctx.runMutation(
+                internal.messages_internals.updateStreamingContent,
+                { messageId, content: fullText },
+              );
+              unflushedLength = 0;
+              lastFlushTime = Date.now();
+            }
             break;
           case "tool-call":
             await stream.writeSSE({
@@ -132,13 +169,11 @@ app.post("/api/chat", async (c) => {
         }
       }
 
-      // Save assistant message to DB
-      await ctx.runMutation(internal.messages_internals.saveAssistantMessage, {
-        chatId,
-        userId,
-        content: fullText,
-        model,
-      });
+      // Final flush: mark message as complete BEFORE sending [DONE]
+      await ctx.runMutation(
+        internal.messages_internals.completeStreamingMessage,
+        { messageId, content: fullText },
+      );
 
       // Auto-title if still "New Chat"
       if (
@@ -185,6 +220,17 @@ app.post("/api/chat", async (c) => {
 
       await stream.writeSSE({ data: "[DONE]", event: "text-delta" });
     } catch (error) {
+      // On error, save whatever accumulated text exists
+      if (messageId) {
+        try {
+          await ctx.runMutation(
+            internal.messages_internals.completeStreamingMessage,
+            { messageId, content: fullText },
+          );
+        } catch {
+          // Best-effort error recovery
+        }
+      }
       const message = error instanceof Error ? error.message : "Unknown error";
       await stream.writeSSE({
         data: `[ERROR]: ${message}`,

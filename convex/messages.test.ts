@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import {
   createTestConvex,
   createTestUser,
@@ -92,6 +92,147 @@ describe("messages", () => {
           content: "Injected",
         }),
       ).rejects.toThrow("Forbidden");
+    });
+  });
+
+  describe("clientId support", () => {
+    test("create message with clientId stores and returns it", async () => {
+      const t = createTestConvex();
+      const { identity } = await createTestUser(t);
+      const chatId = await createTestChat(t, identity, "Test Chat");
+
+      await t.withIdentity(identity).mutation(api.messages_mutations.create, {
+        chatId,
+        role: "user",
+        content: "Hello",
+        clientId: "client-uuid-123",
+      });
+
+      const messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages).toHaveLength(1);
+      expect(messages[0].clientId).toBe("client-uuid-123");
+    });
+
+    test("create message without clientId works (backward compat)", async () => {
+      const t = createTestConvex();
+      const { identity } = await createTestUser(t);
+      const chatId = await createTestChat(t, identity, "Test Chat");
+
+      await t.withIdentity(identity).mutation(api.messages_mutations.create, {
+        chatId,
+        role: "user",
+        content: "Hello",
+      });
+
+      const messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages).toHaveLength(1);
+      expect(messages[0].clientId).toBeUndefined();
+    });
+  });
+
+  describe("streaming lifecycle", () => {
+    test("createStreamingMessage inserts incomplete message", async () => {
+      const t = createTestConvex();
+      const { userId, identity } = await createTestUser(t);
+      const chatId = await createTestChat(t, identity, "Test Chat");
+
+      const messageId = await t.mutation(
+        internal.messages_internals.createStreamingMessage,
+        { chatId, userId, model: "test-model" },
+      );
+      expect(messageId).toBeDefined();
+
+      const messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages).toHaveLength(1);
+      expect(messages[0].content).toBe("");
+      expect(messages[0].role).toBe("assistant");
+      expect(messages[0].isComplete).toBe(false);
+    });
+
+    test("updateStreamingContent patches content", async () => {
+      const t = createTestConvex();
+      const { userId, identity } = await createTestUser(t);
+      const chatId = await createTestChat(t, identity, "Test Chat");
+
+      const messageId = await t.mutation(
+        internal.messages_internals.createStreamingMessage,
+        { chatId, userId, model: "test-model" },
+      );
+
+      await t.mutation(internal.messages_internals.updateStreamingContent, {
+        messageId,
+        content: "Hello world",
+      });
+
+      const messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages[0].content).toBe("Hello world");
+      expect(messages[0].isComplete).toBe(false);
+    });
+
+    test("completeStreamingMessage marks complete with final content", async () => {
+      const t = createTestConvex();
+      const { userId, identity } = await createTestUser(t);
+      const chatId = await createTestChat(t, identity, "Test Chat");
+
+      const messageId = await t.mutation(
+        internal.messages_internals.createStreamingMessage,
+        { chatId, userId, model: "test-model" },
+      );
+
+      await t.mutation(internal.messages_internals.completeStreamingMessage, {
+        messageId,
+        content: "Final answer",
+      });
+
+      const messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages[0].content).toBe("Final answer");
+      expect(messages[0].isComplete).toBe(true);
+    });
+
+    test("full streaming lifecycle: create → update → complete", async () => {
+      const t = createTestConvex();
+      const { userId, identity } = await createTestUser(t);
+      const chatId = await createTestChat(t, identity, "Test Chat");
+
+      // Create
+      const messageId = await t.mutation(
+        internal.messages_internals.createStreamingMessage,
+        { chatId, userId, model: "test-model" },
+      );
+
+      // Flush partial content
+      await t.mutation(internal.messages_internals.updateStreamingContent, {
+        messageId,
+        content: "The answer",
+      });
+
+      let messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages[0].isComplete).toBe(false);
+      expect(messages[0].content).toBe("The answer");
+
+      // Complete
+      await t.mutation(internal.messages_internals.completeStreamingMessage, {
+        messageId,
+        content: "The answer is 42.",
+      });
+
+      messages = await t
+        .withIdentity(identity)
+        .query(api.messages_queries.getByChat, { chatId });
+      expect(messages[0].isComplete).toBe(true);
+      expect(messages[0].content).toBe("The answer is 42.");
     });
   });
 });

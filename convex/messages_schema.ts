@@ -8,6 +8,7 @@ export const messageInFields = {
   chatId: v.id("chats"),
   role: v.union(v.literal("user"), v.literal("assistant")),
   content: v.string(),
+  clientId: v.optional(v.string()),
 };
 
 /** Fields a client may patch (not currently used, but included for symmetry). */
@@ -20,6 +21,7 @@ export const messageInternalFields = {
   ...messageInFields,
   userId: v.id("users"),
   model: v.optional(v.string()),
+  isComplete: v.optional(v.boolean()),
 };
 
 // Out = Doc<"messages"> (system fields _id, _creationTime added automatically)
