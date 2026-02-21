@@ -41,60 +41,36 @@ test.describe("Message flow", () => {
 
     await page.getByRole("button", { name: "Send message" }).click();
 
-    // An error toast should appear since no API key is set
-    await expect(page.getByText("API key not configured")).toBeVisible();
+    // In Phase 2, the app uses a Convex backend. During E2E tests the backend
+    // is not running, so the SSE request fails with a network error.
+    await expect(
+      page.getByText(
+        "Network error. Check your internet connection and try again.",
+      ),
+    ).toBeVisible();
   });
 
-  test("messages persist after reload", async ({ page }) => {
-    // Seed IndexedDB with a chat and message directly
-    const chatId = "test-chat-persist";
-    await page.evaluate((id) => {
-      return new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open("chat-app", 1);
-        request.onupgradeneeded = () => {
-          const db = request.result;
-          if (!db.objectStoreNames.contains("chats")) {
-            db.createObjectStore("chats");
-          }
-          if (!db.objectStoreNames.contains("messages")) {
-            db.createObjectStore("messages");
-          }
-        };
-        request.onsuccess = () => {
-          const db = request.result;
-          const tx = db.transaction(["chats", "messages"], "readwrite");
-          tx.objectStore("chats").put(
-            [{ _id: id, title: "Persist Test", _creationTime: Date.now() }],
-            "data",
-          );
-          tx.objectStore("messages").put(
-            [
-              {
-                _id: "msg-1",
-                chatId: id,
-                role: "user",
-                content: "Persisted message",
-                _creationTime: Date.now(),
-              },
-            ],
-            "data",
-          );
-          tx.oncomplete = () => {
-            db.close();
-            resolve();
-          };
-          tx.onerror = () => reject(tx.error);
-        };
-        request.onerror = () => reject(request.error);
-      });
-    }, chatId);
+  test("chats persist after reload", async ({ page }) => {
+    // Phase 2 uses Convex for data storage, not IndexedDB. Create a chat
+    // through the UI and verify it persists across a page reload via Convex.
+    await newChatButton(page).click();
+    await expect(page).toHaveURL(/\/chats\/.*\/messages/);
 
-    // Navigate to the chat — the app will hydrate from IndexedDB
-    await page.goto(`/chats/${chatId}/messages`);
-    await expect(page.getByText("Persisted message")).toBeVisible();
+    // The new chat should appear in the sidebar with the default title
+    await expect(
+      page
+        .getByRole("complementary")
+        .getByRole("listitem")
+        .filter({ hasText: "New Chat" }),
+    ).toBeVisible();
 
-    // Reload and verify the message is still there
+    // Reload and verify the chat is still listed (persisted in Convex)
     await page.reload();
-    await expect(page.getByText("Persisted message")).toBeVisible();
+    await expect(
+      page
+        .getByRole("complementary")
+        .getByRole("listitem")
+        .filter({ hasText: "New Chat" }),
+    ).toBeVisible();
   });
 });
