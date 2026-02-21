@@ -3,7 +3,6 @@ import { settingsSchema, type SettingsType } from "@/settings/types/settings";
 
 const defaultSettings: SettingsType = {
   displayName: "",
-  openRouterApiKey: "",
 };
 
 export function decodeSettings(value: unknown): SettingsType {

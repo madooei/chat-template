@@ -1,15 +1,42 @@
-import { defineConfig, mergeConfig } from "vitest/config";
-import viteConfig from "./vite.config";
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      globals: true,
-      environment: "jsdom",
-      setupFiles: ["./src/test/setup.ts"],
-      include: ["src/**/*.test.{ts,tsx}"],
-      css: false,
-    },
-  }),
-);
+// Main config that defines both frontend and convex test projects
+export default defineConfig({
+  test: {
+    projects: [
+      // Frontend tests
+      {
+        plugins: [react()],
+        test: {
+          name: "frontend",
+          globals: true,
+          environment: "jsdom",
+          setupFiles: ["./src/test/setup.ts"],
+          include: ["src/**/*.test.{ts,tsx}"],
+          exclude: ["convex/**"],
+          css: false,
+        },
+        resolve: {
+          alias: {
+            "@": path.resolve(__dirname, "./src"),
+          },
+        },
+      },
+      // Convex backend tests
+      {
+        test: {
+          name: "convex",
+          environment: "edge-runtime",
+          include: ["convex/**/*.test.ts"],
+          server: {
+            deps: {
+              inline: ["convex-test"],
+            },
+          },
+        },
+      },
+    ],
+  },
+});

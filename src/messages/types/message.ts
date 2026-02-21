@@ -4,6 +4,7 @@ export const createMessageSchema = z.object({
   chatId: z.string(),
   role: z.enum(["user", "assistant"]),
   content: z.string().min(1),
+  clientId: z.string().optional(),
 });
 
 export const updateMessageSchema = createMessageSchema.partial();
@@ -11,6 +12,7 @@ export const updateMessageSchema = createMessageSchema.partial();
 export const messageSchema = createMessageSchema.extend({
   _id: z.string(),
   _creationTime: z.number(),
+  isComplete: z.boolean().optional(),
 });
 
 export type CreateMessageType = z.infer<typeof createMessageSchema>;

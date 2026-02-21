@@ -22,7 +22,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --host ${HOST} --port ${PORT} --strictPort`,
+    command: `npm run dev:frontend -- --host ${HOST} --port ${PORT} --strictPort`,
     url: BASE_URL,
     // Default to isolated runs to avoid accidentally targeting another app
     // that is already listening on the same port.

@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const settingsSchema = z.object({
   displayName: z.string(),
-  openRouterApiKey: z.string(),
   mastraEndpoint: z.string().optional(),
 });
 

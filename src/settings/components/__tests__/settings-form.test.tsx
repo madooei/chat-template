@@ -6,14 +6,12 @@ import SettingsForm from "../settings-form";
 describe("SettingsForm", () => {
   const defaultValues = {
     displayName: "Alice",
-    openRouterApiKey: "key-123",
   };
 
   it("renders initial values", () => {
     render(<SettingsForm initialValues={defaultValues} onSubmit={vi.fn()} />);
 
     expect(screen.getByLabelText("Display Name")).toHaveValue("Alice");
-    expect(screen.getByLabelText("OpenRouter API Key")).toHaveValue("key-123");
   });
 
   it("save button is disabled when unchanged", () => {
@@ -37,7 +35,6 @@ describe("SettingsForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       displayName: "Bob",
-      openRouterApiKey: "key-123",
     });
   });
 });

@@ -2,8 +2,10 @@ import { MessageSquare } from "lucide-react";
 import { MessageContent } from "@/components/prompt-kit/message";
 import { Loader } from "@/components/prompt-kit/loader";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
+import { Tool } from "@/components/prompt-kit/tool";
 import { ResearchProgress } from "./research-progress";
 import type { MessageType } from "@/messages/types/message";
+import type { ToolCallPart } from "@/messages/types/tool-call";
 import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
 import Message from "./message";
 
@@ -18,6 +20,7 @@ interface MessageListProps {
   messages: MessageType[];
   streamingContent?: string;
   isStreaming?: boolean;
+  toolCalls?: ToolCallPart[];
   onInsertSuggestion?: (content: string) => void;
   researchPhase?: ResearchPhase;
   toolEvents?: ToolEvent[];
@@ -27,6 +30,7 @@ const MessageList: React.FC<MessageListProps> = ({
   messages,
   streamingContent,
   isStreaming,
+  toolCalls = [],
   onInsertSuggestion,
   researchPhase,
   toolEvents,
@@ -34,6 +38,7 @@ const MessageList: React.FC<MessageListProps> = ({
   const isThinking =
     isStreaming &&
     !streamingContent &&
+    toolCalls.length === 0 &&
     (!researchPhase || researchPhase === "idle");
   const isWaitingForReport = researchPhase === "reporting" && !streamingContent;
 
@@ -76,6 +81,22 @@ const MessageList: React.FC<MessageListProps> = ({
       {isWaitingForReport && (
         <div className="px-4 py-3">
           <Loader variant="text-shimmer" size="sm" text="Writing report" />
+        </div>
+      )}
+      {toolCalls.length > 0 && (
+        <div className="px-4">
+          {toolCalls.map((tc) => (
+            <Tool
+              key={tc.toolCallId}
+              toolPart={{
+                type: tc.toolName,
+                state: tc.state,
+                input: tc.args,
+                output: tc.result,
+                toolCallId: tc.toolCallId,
+              }}
+            />
+          ))}
         </div>
       )}
       {streamingContent && (

@@ -80,7 +80,7 @@ This is the most interesting choice. Legend-State is:
 - **Sync-ready** — built-in persistence, debouncing, retry, and sync engine for local-first patterns
 - **Composable** — observables compose naturally; persistence is opt-in per store
 
-But the real reason is **the abstraction boundary it creates**. The hooks (`useQueryChats`, `useMutationChat`) are a thin layer over the store. Right now the store reads/writes localStorage. In Phase 2, you swap the store internals to use Legend-State's sync engine with a real backend, and the hooks + components don't change. React Query is great, but it assumes a fetch-based data model. Legend-State assumes nothing — and when you need debounced sync, server reconciliation, or optimistic updates, it's already there.
+But the real reason is **the abstraction boundary it creates**. The hooks (`useQueryChats`, `useMutationChat`) are a thin layer over the store. Right now the store reads/writes IndexedDB. In Phase 2, you swap the store internals to use Legend-State's sync engine with a real backend, and the hooks + components don't change. React Query is great, but it assumes a fetch-based data model. Legend-State assumes nothing — and when you need debounced sync, server reconciliation, or optimistic updates, it's already there.
 
 ### Wouter over React Router / Tanstack Router
 
@@ -135,13 +135,31 @@ Vitest is native to Vite — it reuses the same config, aliases, and transforms,
 
 Playwright runs real browser tests. Microsoft-backed, stable, TypeScript-first, with an API that reads like English. We use Chromium-only to keep the test matrix simple. Playwright ships with an MCP server and we pair it with three Claude Code agents (planner, generator, healer) so you can describe a user journey in plain English and have the AI write, run, and fix the E2E test — same AI-assisted philosophy as the rest of the stack.
 
+### Convex as the Backend (Phase 2)
+
+Phase 1 runs entirely in the browser — IndexedDB is the database. Phase 2 introduces a real backend, and we chose Convex over alternatives (Supabase, Firebase, PocketBase, a custom Express/Fastify server) for reasons that align with the template's philosophy:
+
+- **Pure TypeScript, one folder** — the entire backend lives in a single `convex/` directory alongside your frontend code. Schema definitions, server functions, cron jobs, HTTP endpoints — all TypeScript, all in one place. No separate backend repo, no second language, no context-switching. The same TypeScript skills students use for React apply directly to the backend.
+- **End-to-end type safety** — Convex schemas define tables, fields, and indexes in TypeScript. The `npx convex dev` command generates typed API bindings, so the type system flows unbroken from schema definition through server functions to frontend hooks. No ORM, no migrations, no manual type duplication — the schema _is_ the source of truth and TypeScript enforces it everywhere.
+- **Reactive by default** — Convex queries are live. When data changes on the server, every client subscribed to that query updates automatically via the `useQuery` hook. This maps perfectly to Legend-State's observable model: swap the store internals from IndexedDB reads to Convex subscriptions, and the hooks + components don't change. No polling, no cache invalidation, no manual refetching.
+- **First-class React integration** — Convex provides `useQuery` and `useMutation` hooks that feel native to React. Components subscribe to server-side queries and get automatic re-renders when data changes. The mental model is "call a function, get data" — the same mental model as calling a store function in Phase 1.
+- **Built-in auth** — Convex Auth provides anonymous authentication out of the box, which is exactly what a "bring your own API key" app needs. Users don't create accounts in Phase 2 — they get anonymous sessions that own their chats. Real auth (OAuth, email/password) layers on top in Phase 4 without architectural changes.
+- **HTTP actions with Hono** — for SSE streaming (the AI chat endpoint), Convex supports HTTP actions using Hono as the router. This means the streaming endpoint lives alongside the reactive queries and mutations in the same codebase, same deployment, same auth context. No separate API server to deploy and maintain.
+- **Batteries included** — Convex provides built-in file storage (upload, download, manage files without a separate S3 bucket), cron jobs (schedule recurring functions with seconds-level granularity), and scheduled functions (durable one-off execution minutes, days, or months in the future). These are features that typically require stitching together multiple services — here they're part of the same platform, same TypeScript codebase, same deployment.
+- **AI-native features** — Convex has built-in vector search, effectively giving you a vector database without adding another service. You can store embeddings alongside your regular data and query them by semantic similarity — the foundation for RAG, recommendations, and semantic search. Vector indexes support millions of vectors and are consistent with the rest of your data (write a vector, immediately query it).
+- **Components for extensibility** — Convex has a component system that extends the platform's capabilities. The **Agent component** (`@convex-dev/agent`) is particularly relevant: it manages threads, messages, and conversation context for AI agents, with built-in hybrid vector/text search and RAG integration. The **RAG component** provides semantic search with configurable embedding models, namespaces, and importance weighting. The **Workflow component** enables durable multi-step workflows with retries and load balancing. These are separable pieces — use what you need for each phase.
+- **Zero infrastructure** — no database to provision, no server to deploy, no connection pooling to configure. `npx convex dev` starts a development backend. `npx convex deploy` ships to production. For a course project, this removes an entire category of operational complexity.
+- **AI-friendly** — Convex has good TypeScript types, a clear function model, and growing representation in AI training data. The patterns are regular enough (schema → guards → helpers → functions) that Claude Code generates correct Convex code consistently.
+
+Convex is open source (FSL Apache 2.0, converting to full Apache 2.0 two years after release). The backend, dashboard, client libraries, and CLI are all open source, and you can self-host via Docker if you want full control. For this template we use Convex Cloud because it eliminates operational complexity — but there's no lock-in. If you outgrow the hosted service or need to run on your own infrastructure, the self-hosted path exists with the same codebase the cloud service runs.
+
 ## The Phases
 
 This template is designed to evolve in phases:
 
 0. **Phase 0 — Project scaffolding.** A minimal repo with no tech stack decisions. It provides Claude Code rules and skills for collaborative software development — branch naming, commit conventions, PR workflows, iteration planning, retrospectives, and GitHub issue/PR templates. If you want to use your own stack, start here and build on top of it. Phase 0 is the foundation every other phase inherits.
 
-1. **Phase 1 — Frontend only, with AI.** React + Vite + Legend-State with localStorage persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
+1. **Phase 1 — Frontend only, with AI.** React + Vite + Legend-State with IndexedDB persistence, plus Vercel AI SDK for provider-agnostic chat. Users bring their own API key, pick a provider, and chat — all running locally with no backend. You learn the patterns — feature modules, stores, hooks, components — and get a working AI chat UI without any infrastructure noise.
 
 2. **Phase 2 — Bring a backend.** Swap the store layer to talk to a real backend (Convex). Because the abstraction boundary is clean, hooks and components don't change. You learn how a reactive backend integrates with a frontend you already understand.
 
@@ -166,6 +184,25 @@ The folder structure (`types/ → store/ → hooks/ → components/ → pages/`)
 5. **Pages** — Compose components into views
 
 Each layer only talks to the one below it. Swap the store, everything above still works.
+
+The backend follows the same principle — separation of concerns through a responsibility chain. All Convex files live flat at the root of `convex/`, using domain-prefixed names:
+
+```plaintext
+convex/
+├── schema.ts                # Main schema (imports domain tables)
+├── lib.ts                   # Auth wrappers (queryWithAuth, etc.)
+├── {domain}_schema.ts       # Type hierarchy and table definition
+├── {domain}_helpers.ts      # Pure database operations
+├── {domain}_queries.ts      # Public read endpoints
+├── {domain}_mutations.ts    # Public write endpoints
+├── {domain}_guards.ts       # Authorization checks (optional)
+├── auth.ts                  # Auth configuration
+└── http.ts                  # HTTP endpoints (Hono router)
+```
+
+The pipeline is: **schema → guards → helpers → queries/mutations**. Schema defines the data shape. Guards verify authorization. Helpers do pure database operations. Queries and mutations are thin public endpoints that compose guards and helpers. The same layered thinking as the frontend — each file has one job, and you can read any domain top-to-bottom without jumping between directories.
+
+Why flat files instead of nested folders? Convex uses file-based routing. Nesting creates verbose API paths (`api.chats.queries.getAll`). Flat files with domain prefixes keep it clean (`api.chats_queries.getAll`).
 
 ## AI-Assisted Development
 

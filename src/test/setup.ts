@@ -1,8 +1,6 @@
-import "fake-indexeddb/auto";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
-import { resetDb } from "@/store/idb";
 
 // Provide a full localStorage implementation because jsdom's proxy-based
 // localStorage doesn't support all Storage methods reliably.
@@ -53,9 +51,8 @@ vi.stubGlobal(
   }),
 );
 
-afterEach(async () => {
+afterEach(() => {
   cleanup();
   localStorageStub.clear();
   uuidCounter = 0;
-  await resetDb();
 });

@@ -85,15 +85,28 @@ test.describe("Chat flow", () => {
     await input.fill("React Help");
     await page.getByRole("button", { name: "Save" }).click();
 
+    // Wait for the rename to be reflected in the sidebar before proceeding
+    await expect(
+      page.getByRole("complementary").getByText("React Help"),
+    ).toBeVisible();
+
     // Navigate home and create second chat
     await page.goto("/");
     await newChatButton(page).click();
     await expect(page).toHaveURL(/\/chats\/.*\/messages/);
 
-    // The second chat is now active, so "Edit chat" for it is unique
-    // (only one chat is active, so only one set of action buttons is visible via hover)
-    // Use the listitem filter to target the correct chat's edit button
+    // Wait for the second chat to appear in the sidebar before trying to edit it
+    await expect(
+      page
+        .getByRole("complementary")
+        .getByRole("listitem")
+        .filter({ hasText: "New Chat" }),
+    ).toBeVisible();
+
+    // Scope the listitem filter to the sidebar (complementary) to avoid ambiguity
+    // with other list elements on the page
     await page
+      .getByRole("complementary")
       .getByRole("listitem")
       .filter({ hasText: "New Chat" })
       .getByLabel("Edit chat")
@@ -102,6 +115,11 @@ test.describe("Chat flow", () => {
     await input2.clear();
     await input2.fill("Python Tips");
     await page.getByRole("button", { name: "Save" }).click();
+
+    // Wait for the rename to be reflected in the sidebar before searching
+    await expect(
+      page.getByRole("complementary").getByText("Python Tips"),
+    ).toBeVisible();
 
     // Search for "React"
     await page.getByPlaceholder("Search chats...").fill("React");

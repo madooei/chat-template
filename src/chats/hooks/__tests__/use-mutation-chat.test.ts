@@ -1,25 +1,33 @@
 import { renderHook, act } from "@testing-library/react";
 import { vi } from "vitest";
-import { $chats } from "@/chats/store/chat";
-import { $messages } from "@/messages/store/message";
-import { useMutationChat } from "../use-mutation-chat";
-import { createTestChat } from "@/test/helpers";
-import { createTestMessage } from "@/test/helpers";
+
+const mockUseMutation = vi.fn();
+vi.mock("convex/react", () => ({
+  useMutation: (...args: unknown[]) => mockUseMutation(...args),
+}));
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+import { useMutationChat } from "../use-mutation-chat";
+
+let mockUpdate: ReturnType<typeof vi.fn>;
+let mockRemove: ReturnType<typeof vi.fn>;
+
 beforeEach(() => {
-  $chats.set([]);
-  $messages.set([]);
+  mockUpdate = vi.fn().mockResolvedValue(null);
+  mockRemove = vi.fn().mockResolvedValue(null);
+
+  // useMutation is called twice: once for update, once for remove
+  mockUseMutation.mockReset();
+  mockUseMutation
+    .mockReturnValueOnce(mockUpdate)
+    .mockReturnValueOnce(mockRemove);
 });
 
 describe("useMutationChat", () => {
-  it("edit() updates the chat title", async () => {
-    const chat = createTestChat({ _id: "c1", title: "Old Title" });
-    $chats.set([chat]);
-
+  it("edit() calls update mutation", async () => {
     const { result } = renderHook(() => useMutationChat("c1"));
 
     let success = false;
@@ -28,18 +36,13 @@ describe("useMutationChat", () => {
     });
 
     expect(success).toBe(true);
-    expect($chats.get()[0].title).toBe("New Title");
+    expect(mockUpdate).toHaveBeenCalledWith({
+      chatId: "c1",
+      title: "New Title",
+    });
   });
 
-  it("delete() removes the chat and cascades to messages", async () => {
-    const chat = createTestChat({ _id: "c1", title: "To Delete" });
-    $chats.set([chat]);
-    $messages.set([
-      createTestMessage({ _id: "m1", chatId: "c1" }),
-      createTestMessage({ _id: "m2", chatId: "c1" }),
-      createTestMessage({ _id: "m3", chatId: "other" }),
-    ]);
-
+  it("delete() calls remove mutation", async () => {
     const { result } = renderHook(() => useMutationChat("c1"));
 
     let success = false;
@@ -48,8 +51,23 @@ describe("useMutationChat", () => {
     });
 
     expect(success).toBe(true);
-    expect($chats.get()).toHaveLength(0);
-    expect($messages.get()).toHaveLength(1);
-    expect($messages.get()[0]._id).toBe("m3");
+    expect(mockRemove).toHaveBeenCalledWith({ chatId: "c1" });
+  });
+
+  it("edit() returns false on error", async () => {
+    mockUseMutation.mockReset();
+    mockUpdate = vi.fn().mockRejectedValue(new Error("Forbidden"));
+    mockUseMutation
+      .mockReturnValueOnce(mockUpdate)
+      .mockReturnValueOnce(mockRemove);
+
+    const { result } = renderHook(() => useMutationChat("c1"));
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.edit({ title: "Bad" });
+    });
+
+    expect(success).toBe(false);
   });
 });

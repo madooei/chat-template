@@ -1,18 +1,26 @@
 import { renderHook, act } from "@testing-library/react";
 import { vi } from "vitest";
-import { $chats } from "@/chats/store/chat";
-import { useMutationChats } from "../use-mutation-chats";
+
+const mockUseMutation = vi.fn();
+vi.mock("convex/react", () => ({
+  useMutation: (...args: unknown[]) => mockUseMutation(...args),
+}));
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+import { useMutationChats } from "../use-mutation-chats";
+
 beforeEach(() => {
-  $chats.set([]);
+  mockUseMutation.mockReset();
 });
 
 describe("useMutationChats", () => {
-  it("add() creates a chat and returns its ID", async () => {
+  it("add() calls create mutation and returns chat ID", async () => {
+    const mockCreate = vi.fn().mockResolvedValue("new-chat-id");
+    mockUseMutation.mockReturnValue(mockCreate);
+
     const { result } = renderHook(() => useMutationChats());
 
     let chatId: string | null = null;
@@ -20,8 +28,21 @@ describe("useMutationChats", () => {
       chatId = await result.current.add({ title: "New Chat" });
     });
 
-    expect(chatId).toBe("test-uuid-1");
-    expect($chats.get()).toHaveLength(1);
-    expect($chats.get()[0].title).toBe("New Chat");
+    expect(chatId).toBe("new-chat-id");
+    expect(mockCreate).toHaveBeenCalledWith({ title: "New Chat" });
+  });
+
+  it("add() returns null and shows toast on error", async () => {
+    const mockCreate = vi.fn().mockRejectedValue(new Error("Failed"));
+    mockUseMutation.mockReturnValue(mockCreate);
+
+    const { result } = renderHook(() => useMutationChats());
+
+    let chatId: string | null = null;
+    await act(async () => {
+      chatId = await result.current.add({ title: "Bad Chat" });
+    });
+
+    expect(chatId).toBeNull();
   });
 });

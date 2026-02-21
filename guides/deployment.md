@@ -27,12 +27,13 @@ This project deploys to [Netlify](https://www.netlify.com/) via GitHub Actions. 
 ## Step 3 — Add Secrets to GitHub
 
 1. Go to your GitHub repo > **Settings** > **Secrets and variables** > **Actions**
-2. Add two repository secrets:
+2. Add three repository secrets:
 
-| Secret name          | Value                                 |
-| -------------------- | ------------------------------------- |
-| `NETLIFY_AUTH_TOKEN` | The personal access token from Step 2 |
-| `NETLIFY_SITE_ID`    | The site ID from Step 1               |
+| Secret name          | Value                                                                        |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `NETLIFY_AUTH_TOKEN` | The personal access token from Step 2                                        |
+| `NETLIFY_SITE_ID`    | The site ID from Step 1                                                      |
+| `CONVEX_DEPLOY_KEY`  | Your Convex deploy key (see [Convex guide](./convex.md#going-to-production)) |
 
 ## Step 4 — Deploy
 
@@ -53,7 +54,7 @@ Every PR against `master` triggers the CI workflow (`.github/workflows/ci.yml`),
 
 ### CD (Merge to Master)
 
-Every push to `master` triggers the CD workflow (`.github/workflows/cd.yml`), which builds and deploys to Netlify.
+Every push to the deploy branch triggers the CD workflow (`.github/workflows/cd.yml`), which deploys Convex functions, builds the frontend, and deploys to Netlify. The build step uses `npx convex deploy --cmd 'pnpm run build'` to deploy backend and frontend in a single command.
 
 ### SPA Routing
 

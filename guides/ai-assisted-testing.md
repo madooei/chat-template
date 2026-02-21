@@ -5,7 +5,7 @@ This guide walks you through using Claude Code to write and maintain tests. It c
 ## Prerequisites
 
 - Claude Code installed and working
-- The dev server runs: `pnpm run dev`
+- The dev server runs: `pnpm run dev` (or `pnpm run dev:frontend` for frontend only)
 - Playwright browsers installed: `npx playwright install chromium`
 - You've read [Testing](testing.md) to understand the test layers
 

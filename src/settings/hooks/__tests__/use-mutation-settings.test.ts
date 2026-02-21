@@ -8,7 +8,7 @@ vi.mock("sonner", () => ({
 }));
 
 beforeEach(() => {
-  $settings.set({ displayName: "", openRouterApiKey: "" });
+  $settings.set({ displayName: "" });
 });
 
 describe("useMutationSettings", () => {
@@ -20,6 +20,5 @@ describe("useMutationSettings", () => {
     });
 
     expect($settings.get().displayName).toBe("Bob");
-    expect($settings.get().openRouterApiKey).toBe("");
   });
 });

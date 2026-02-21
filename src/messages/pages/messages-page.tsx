@@ -27,13 +27,14 @@ interface MessagesPageProps {
 }
 
 const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
-  const { data: chat } = useQueryChat(chatId);
+  const { data: chat, loading: chatLoading } = useQueryChat(chatId);
   const { data: messages } = useQueryMessages(chatId);
   const {
     sendMessage,
     isStreaming,
     streamingContent,
     abort,
+    toolCalls,
     researchPhase,
     toolEvents,
   } = useChat(chatId);
@@ -50,6 +51,14 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
       setInputValue("");
     }
   };
+
+  if (chatLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!chat) {
     return (
@@ -109,6 +118,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
             messages={messages}
             streamingContent={streamingContent}
             isStreaming={isStreaming}
+            toolCalls={toolCalls}
             onInsertSuggestion={setInputValue}
             researchPhase={researchPhase}
             toolEvents={toolEvents}

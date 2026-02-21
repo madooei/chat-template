@@ -1,30 +1,39 @@
 import { renderHook } from "@testing-library/react";
-import { $chats } from "@/chats/store/chat";
-import { useQueryChats } from "../use-query-chats";
+import { vi } from "vitest";
 import { createTestChat } from "@/test/helpers";
 
+const mockUseQuery = vi.fn();
+vi.mock("convex/react", () => ({
+  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+}));
+
+import { useQueryChats } from "../use-query-chats";
+
 beforeEach(() => {
-  $chats.set([]);
+  mockUseQuery.mockReset();
 });
 
 describe("useQueryChats", () => {
-  it("returns empty array when store is empty", () => {
+  it("returns empty array and loading=true when query is undefined", () => {
+    mockUseQuery.mockReturnValue(undefined);
+
     const { result } = renderHook(() => useQueryChats());
 
     expect(result.current.data).toEqual([]);
-    expect(result.current.loading).toBe(false);
+    expect(result.current.loading).toBe(true);
     expect(result.current.error).toBe(false);
   });
 
-  it("returns chats when populated", () => {
+  it("returns chats when query resolves", () => {
     const chat1 = createTestChat({ _id: "c1", title: "First" });
     const chat2 = createTestChat({ _id: "c2", title: "Second" });
-    $chats.set([chat1, chat2]);
+    mockUseQuery.mockReturnValue([chat1, chat2]);
 
     const { result } = renderHook(() => useQueryChats());
 
     expect(result.current.data).toHaveLength(2);
     expect(result.current.data[0].title).toBe("First");
     expect(result.current.data[1].title).toBe("Second");
+    expect(result.current.loading).toBe(false);
   });
 });

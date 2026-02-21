@@ -40,7 +40,7 @@ These are the slow tests. Playwright opens a real Chromium browser and clicks ar
 ### What happens when you run `pnpm run test:e2e`
 
 1. Playwright reads `playwright.config.ts`
-2. It sees the `webServer` block and starts `pnpm run dev` automatically, waiting until `http://127.0.0.1:5173` responds
+2. It sees the `webServer` block and starts `pnpm run dev:frontend` automatically, waiting until `http://127.0.0.1:5173` responds
 3. It launches headless Chromium (no visible window)
 4. It runs each test file in `e2e/`
 5. When done, it kills the dev server and the browser

@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
-import { $chats } from "@/chats/store/chat";
 import ChatList from "../chat-list";
 import { createTestChat } from "@/test/helpers";
 
@@ -17,12 +16,24 @@ vi.mock("@/layout/sidebar-context", () => ({
   useSidebar: () => ({ closeSidebar: vi.fn() }),
 }));
 
+const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn(() => vi.fn().mockResolvedValue(null));
+vi.mock("convex/react", () => ({
+  useQuery: (...args: unknown[]) => mockUseQuery(...(args as [unknown])),
+  useMutation: () => mockUseMutation(),
+  useAction: () => vi.fn(),
+}));
+
 beforeEach(() => {
-  $chats.set([]);
+  mockUseQuery.mockReset();
+  mockUseMutation.mockReset();
+  mockUseMutation.mockReturnValue(vi.fn().mockResolvedValue(null));
 });
 
 describe("ChatList", () => {
   it("renders empty state when no chats exist", () => {
+    mockUseQuery.mockReturnValue([]);
+
     render(<ChatList />);
 
     expect(
@@ -32,7 +43,7 @@ describe("ChatList", () => {
 
   it("renders chat titles", () => {
     const now = Date.now();
-    $chats.set([
+    mockUseQuery.mockReturnValue([
       createTestChat({ _id: "c1", title: "First Chat", _creationTime: now }),
       createTestChat({
         _id: "c2",
@@ -49,7 +60,7 @@ describe("ChatList", () => {
 
   it("search filters chats by title", () => {
     const now = Date.now();
-    $chats.set([
+    mockUseQuery.mockReturnValue([
       createTestChat({ _id: "c1", title: "React Help", _creationTime: now }),
       createTestChat({
         _id: "c2",

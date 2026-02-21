@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAction } from "convex/react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import type { ChatType } from "@/chats/types/chat";
 import { useMutationChat } from "@/chats/hooks/use-mutation-chat";
-import { $messages } from "@/messages/store/message";
-import { getSettings } from "@/settings/store/settings";
-import { generateChatTitle } from "@/lib/ai";
-import { DEFAULT_MODEL } from "@/config/models";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 interface EditChatDialogProps {
   chat: ChatType;
@@ -30,24 +30,28 @@ const EditChatDialog: React.FC<EditChatDialogProps> = ({
   const [title, setTitle] = useState(chat.title);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const { edit: editChat } = useMutationChat(chat._id);
+  // Use direct useQuery instead of useQueryMessages to avoid its unmount
+  // disposal side-effect, which would wipe the shared message store for
+  // still-mounted consumers (e.g., the active chat view).
+  const chatMessages =
+    useQuery(api.messages_queries.getByChat, {
+      chatId: chat._id as Id<"chats">,
+    }) ?? [];
+  const suggestTitle = useAction(api.chats_actions.suggestTitle);
 
-  const settings = getSettings();
-  const chatMessages = $messages.get().filter((m) => m.chatId === chat._id);
-  const canSuggest = chatMessages.length > 0 && !!settings.openRouterApiKey;
+  const canSuggest = chatMessages.length > 0;
 
   const handleSuggestTitle = async () => {
     setIsSuggesting(true);
-    const messages = chatMessages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-    const suggested = await generateChatTitle({
-      apiKey: settings.openRouterApiKey,
-      model: DEFAULT_MODEL,
-      messages,
-    });
-    if (suggested) {
-      setTitle(suggested);
+    try {
+      const suggested = await suggestTitle({
+        chatId: chat._id as Id<"chats">,
+      });
+      if (suggested) {
+        setTitle(suggested);
+      }
+    } catch {
+      // Suggestion failed — ignore silently
     }
     setIsSuggesting(false);
   };

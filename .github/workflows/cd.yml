@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: [phase-1]
+    branches: [master]
 
 jobs:
   deploy:
@@ -22,8 +22,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm run build
+      - name: Deploy Convex and Build
+        run: npx convex deploy --cmd 'pnpm run build'
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0

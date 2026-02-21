@@ -1,16 +1,26 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useMutation } from "convex/react";
+import { useSelector } from "@legendapp/state/react";
 import { toast } from "sonner";
-import { getSettings } from "@/settings/store/settings";
-import { addMessage } from "@/messages/store/message";
-import { $messages } from "@/messages/store/message";
-import { $chats, updateChat } from "@/chats/store/chat";
-import {
-  streamChat,
-  streamMastraChat,
-  generateChatTitle,
-  getMastraEndpoint,
-} from "@/lib/ai";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useAuthToken } from "@/hooks/use-auth-token";
+import { streamChatSSE } from "@/lib/sse";
+import { CONVEX_SITE_URL } from "@/lib/convex";
+import { streamMastraChat, getMastraEndpoint } from "@/lib/ai";
+import type { ToolCallPart } from "@/messages/types/tool-call";
 import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
+import {
+  startStreaming,
+  appendStreamingContent,
+  setStreamingMessageId,
+  setStreamingToolCalls,
+  clearStreaming,
+  addOptimisticMessage,
+  removeOptimisticMessage,
+  chatMessages$,
+  getStreamingState,
+} from "@/messages/store/messages";
 
 function friendlyErrorMessage(err: Error): string {
   const msg = err.message.toLowerCase();
@@ -20,7 +30,7 @@ function friendlyErrorMessage(err: Error): string {
     msg.includes("unauthorized") ||
     msg.includes("401")
   ) {
-    return "Your API key is invalid. Please check it in Settings.";
+    return "Authentication error. Please refresh the page.";
   }
   if (
     msg.includes("quota") ||
@@ -42,14 +52,61 @@ function friendlyErrorMessage(err: Error): string {
   return "Something went wrong. Please try again.";
 }
 
+/**
+ * Wait for a persisted message with the given ID to appear with isComplete !== false.
+ * Uses `!== false` (not `=== true`) for backward compatibility with messages that
+ * predate the isComplete field — those have `undefined`, which should count as complete.
+ * Polls at 50ms intervals with a 5s timeout.
+ */
+function waitForPersistedMessage(
+  chatId: string,
+  messageId: string,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    const TIMEOUT = 5000;
+    const INTERVAL = 50;
+
+    const check = () => {
+      const persisted = chatMessages$[chatId]?.persisted?.peek() ?? [];
+      const found = persisted.find(
+        (m) => m._id === messageId && m.isComplete !== false,
+      );
+      if (found) {
+        resolve(true);
+        return;
+      }
+      if (Date.now() - startTime >= TIMEOUT) {
+        resolve(false);
+        return;
+      }
+      setTimeout(check, INTERVAL);
+    };
+    check();
+  });
+}
+
 export function useChat(chatId: string) {
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [error, setError] = useState<Error | null>(null);
-  const [researchPhase, setResearchPhase] = useState<ResearchPhase>("idle");
-  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  const toolCallsRef = useRef<Map<string, ToolCallPart>>(new Map());
+  const token = useAuthToken();
+  const createMessage = useMutation(api.messages_mutations.create);
+
+  // Streaming state from Legend-State (phase-2 architecture)
+  const isStreaming = useSelector(
+    () => chatMessages$[chatId]?.streaming?.isStreaming?.get() ?? false,
+  );
+  const streamingContent = useSelector(
+    () => chatMessages$[chatId]?.streaming?.content?.get() ?? "",
+  );
+  const toolCalls = useSelector(
+    () => chatMessages$[chatId]?.streaming?.toolCalls?.get() ?? [],
+  );
+
+  // Research state (phase-3 Mastra integration)
+  const [researchPhase, setResearchPhase] = useState<ResearchPhase>("idle");
+  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
 
   useEffect(() => {
     return () => {
@@ -64,14 +121,11 @@ export function useChat(chatId: string) {
     async (
       content: string,
       model: string,
-      useResearch: boolean,
+      useResearch = false,
     ): Promise<boolean> => {
-      const settings = getSettings();
-
-      // Only require API key for non-research messages
-      if (!useResearch && !settings.openRouterApiKey) {
-        toast.error("API key not configured", {
-          description: "Add your OpenRouter API key in Settings",
+      if (!token) {
+        toast.error("Not authenticated", {
+          description: "Please refresh the page to sign in.",
         });
         return false;
       }
@@ -83,22 +137,36 @@ export function useChat(chatId: string) {
         abortControllerRef.current = null;
       }
 
-      addMessage({
-        _id: crypto.randomUUID(),
+      // Local-first: add optimistic user message immediately
+      const clientId = crypto.randomUUID();
+      addOptimisticMessage(chatId, clientId, {
+        _id: `optimistic-${clientId}`,
         chatId,
         role: "user",
         content,
+        clientId,
         _creationTime: Date.now(),
       });
 
-      const history = $messages
-        .get()
-        .filter((m) => m.chatId === chatId)
-        .map((m) => ({ role: m.role, content: m.content }));
+      // Persist user message via Convex mutation
+      try {
+        await createMessage({
+          chatId: chatId as Id<"chats">,
+          role: "user",
+          content,
+          clientId,
+        });
+      } catch (err: unknown) {
+        removeOptimisticMessage(chatId, clientId);
+        toast.error("Failed to save message", {
+          description: (err as Error).message,
+        });
+        return false;
+      }
 
-      setIsStreaming(true);
-      setStreamingContent("");
-      setError(null);
+      // Set up streaming state
+      startStreaming(chatId);
+      toolCallsRef.current = new Map();
 
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
@@ -106,78 +174,19 @@ export function useChat(chatId: string) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      const onFinish = (fullText: string) => {
-        if (requestIdRef.current !== requestId) return;
-
-        const latestChat = $chats.get().find((c) => c._id === chatId);
-        if (!latestChat) {
-          setStreamingContent("");
-          setIsStreaming(false);
-          setResearchPhase("idle");
-          setToolEvents([]);
-          abortControllerRef.current = null;
-          return;
-        }
-
-        addMessage({
-          _id: crypto.randomUUID(),
-          chatId,
-          role: "assistant",
-          content: fullText,
-          _creationTime: Date.now(),
-        });
-        setStreamingContent("");
-        setIsStreaming(false);
-        setResearchPhase("idle");
-        setToolEvents([]);
-        abortControllerRef.current = null;
-
-        // Auto-generate title for new chats
-        if (latestChat.title === "New Chat") {
-          if (settings.openRouterApiKey) {
-            const allMessages = $messages
-              .get()
-              .filter((m) => m.chatId === chatId)
-              .map((m) => ({ role: m.role, content: m.content }));
-
-            generateChatTitle({
-              apiKey: settings.openRouterApiKey,
-              model,
-              messages: allMessages,
-            }).then((title) => {
-              if (requestIdRef.current !== requestId || !title) return;
-              const currentChat = $chats.get().find((c) => c._id === chatId);
-              if (currentChat) {
-                updateChat({ ...currentChat, title });
-              }
-            });
-          } else {
-            // Fallback: use first few words of user message as title
-            const words = content.split(/\s+/).slice(0, 6).join(" ");
-            const fallbackTitle =
-              words.length > 40 ? words.slice(0, 40) + "..." : words;
-            updateChat({ ...latestChat, title: fallbackTitle });
-          }
-        }
-      };
-
-      const onError = (err: Error) => {
-        if (requestIdRef.current !== requestId) return;
-        setError(err);
-        setStreamingContent("");
-        setIsStreaming(false);
-        setResearchPhase("idle");
-        setToolEvents([]);
-        abortControllerRef.current = null;
-        console.error("[useChat] streaming failed:", err);
-        const friendly = friendlyErrorMessage(err);
-        toast.error(friendly, { duration: 8000 });
-      };
-
       if (useResearch) {
-        // Two-phase flow: research agent → report agent
+        // Research path: two-phase Mastra flow (research agent → report agent)
+        // Currently calls Mastra directly from the frontend.
+        // TODO: Refactor to route through Convex HTTP endpoint (step 2).
         setResearchPhase("researching");
         setToolEvents([]);
+
+        const persistedMessages =
+          chatMessages$[chatId]?.persisted?.peek() ?? [];
+        const history = persistedMessages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
 
         void streamMastraChat({
           endpoint: getMastraEndpoint(),
@@ -218,7 +227,6 @@ export function useChat(chatId: string) {
 
             // Phase 2: call report agent to produce a clean markdown report
             setResearchPhase("reporting");
-            setStreamingContent("");
 
             const reportPrompt = `Based on the following research data, write a comprehensive report answering: ${content}\n\nResearch Data:\n${researchText}`;
 
@@ -229,52 +237,144 @@ export function useChat(chatId: string) {
               abortSignal: abortController.signal,
               onChunk: (accumulated) => {
                 if (requestIdRef.current !== requestId) return;
-                setStreamingContent(accumulated);
+                appendStreamingContent(chatId, accumulated);
               },
-              onFinish,
-              onError,
+              onFinish: (fullText) => {
+                if (requestIdRef.current !== requestId) return;
+                // Persist assistant message via Convex
+                void createMessage({
+                  chatId: chatId as Id<"chats">,
+                  role: "assistant",
+                  content: fullText,
+                }).catch(() => {
+                  // Silently fail — message is already visible via streaming
+                });
+                setResearchPhase("idle");
+                setToolEvents([]);
+                abortControllerRef.current = null;
+                clearStreaming(chatId);
+              },
+              onError: (err) => {
+                if (requestIdRef.current !== requestId) return;
+                abortControllerRef.current = null;
+                setResearchPhase("idle");
+                setToolEvents([]);
+                clearStreaming(chatId);
+                console.error("[useChat] research reporting failed:", err);
+                toast.error(friendlyErrorMessage(err), { duration: 8000 });
+              },
             });
           },
-          onError,
+          onError: (err) => {
+            if (requestIdRef.current !== requestId) return;
+            abortControllerRef.current = null;
+            setResearchPhase("idle");
+            setToolEvents([]);
+            clearStreaming(chatId);
+            console.error("[useChat] research streaming failed:", err);
+            toast.error(friendlyErrorMessage(err), { duration: 8000 });
+          },
         });
       } else {
-        const onChunk = (accumulated: string) => {
-          if (requestIdRef.current !== requestId) return;
-          setStreamingContent(accumulated);
-        };
-
-        void streamChat({
-          apiKey: settings.openRouterApiKey,
+        // Normal chat path: Convex SSE streaming (phase-2 architecture)
+        streamChatSSE({
+          siteUrl: CONVEX_SITE_URL,
+          token,
+          chatId,
           model,
-          messages: history,
-          abortSignal: abortController.signal,
-          onChunk,
-          onFinish,
-          onError,
+          signal: abortController.signal,
+          onMessageCreated: (data) => {
+            if (requestIdRef.current !== requestId) return;
+            setStreamingMessageId(chatId, data.messageId);
+          },
+          onChunk: (accumulated) => {
+            if (requestIdRef.current !== requestId) return;
+            appendStreamingContent(chatId, accumulated);
+          },
+          onToolCall: ({ toolCallId, toolName, args }) => {
+            if (requestIdRef.current !== requestId) return;
+            const part: ToolCallPart = {
+              toolCallId,
+              toolName,
+              state: "input-available",
+              args,
+            };
+            toolCallsRef.current.set(toolCallId, part);
+            setStreamingToolCalls(
+              chatId,
+              Array.from(toolCallsRef.current.values()),
+            );
+          },
+          onToolResult: ({ toolCallId, toolName, result }) => {
+            if (requestIdRef.current !== requestId) return;
+            const existing = toolCallsRef.current.get(toolCallId);
+            const part: ToolCallPart = {
+              toolCallId,
+              toolName,
+              state: "output-available",
+              args: existing?.args ?? {},
+              result,
+            };
+            toolCallsRef.current.set(toolCallId, part);
+            setStreamingToolCalls(
+              chatId,
+              Array.from(toolCallsRef.current.values()),
+            );
+          },
+          onDone: () => {
+            if (requestIdRef.current !== requestId) return;
+            abortControllerRef.current = null;
+            toolCallsRef.current = new Map();
+
+            // Wait for persisted message before clearing streaming state
+            const { messageId } = getStreamingState(chatId);
+            if (messageId) {
+              void waitForPersistedMessage(chatId, messageId).then(() => {
+                if (requestIdRef.current !== requestId) return;
+                clearStreaming(chatId);
+              });
+            } else {
+              clearStreaming(chatId);
+            }
+          },
+          onError: (err) => {
+            if (requestIdRef.current !== requestId) return;
+            abortControllerRef.current = null;
+            toolCallsRef.current = new Map();
+            clearStreaming(chatId);
+            console.error("[useChat] streaming failed:", err);
+            const friendly = friendlyErrorMessage(err);
+            toast.error(friendly, { duration: 8000 });
+          },
+        }).catch((err: unknown) => {
+          // Safety net: if onError itself throws, ensure streaming state is cleaned up.
+          clearStreaming(chatId);
+          console.error("[useChat] unexpected streaming error:", err);
         });
       }
 
       return true;
     },
-    [chatId],
+    [chatId, token, createMessage],
   );
 
   const abort = useCallback(() => {
     requestIdRef.current += 1;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
-    setStreamingContent("");
-    setIsStreaming(false);
+    toolCallsRef.current = new Map();
     setResearchPhase("idle");
     setToolEvents([]);
-  }, []);
+    clearStreaming(chatId);
+  }, [chatId]);
 
   return {
     sendMessage,
     isStreaming,
     streamingContent,
-    error,
+    error: null as Error | null,
     abort,
+    toolCalls,
     researchPhase,
     toolEvents,
   };
