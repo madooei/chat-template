@@ -2,6 +2,13 @@
 
 A "bring your own API key" AI chat application built with React, Vite, Legend-State, and Wouter. Users pick a provider, supply their own key, and chat — all running locally with no backend.
 
+## Prerequisites
+
+- [Git](https://git-scm.com/downloads)
+- [GitHub CLI (`gh`)](https://cli.github.com/) — used for issue, label, milestone, and PR management
+- [Node.js 18+](https://nodejs.org/en/download/) — includes npm
+- [pnpm](https://pnpm.io/) — install with `npm install -g pnpm`
+
 ## Getting Started
 
 ```bash
