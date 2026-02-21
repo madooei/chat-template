@@ -25,11 +25,11 @@ Patterns for building HTTP endpoints inside Convex using Hono, including SSE str
 
 ## Quick Reference
 
-| File                  | Purpose                                           |
-| --------------------- | ------------------------------------------------- |
-| `convex/http.ts`      | HTTP router, auth middleware, CORS, URL rewriting |
-| `convex/http_chat.ts` | Hono app with route handlers for chat streaming   |
-| [patterns.md](patterns.md) | Auth, CORS, URL rewriting, SSE streaming details |
+| File                       | Purpose                                           |
+| -------------------------- | ------------------------------------------------- |
+| `convex/http.ts`           | HTTP router, auth middleware, CORS, URL rewriting |
+| `convex/http_chat.ts`      | Hono app with route handlers for chat streaming   |
+| [patterns.md](patterns.md) | Auth, CORS, URL rewriting, SSE streaming details  |
 
 ---
 

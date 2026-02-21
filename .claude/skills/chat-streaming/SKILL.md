@@ -30,14 +30,14 @@ For the full design rationale, trade-offs, and alternative approaches considered
 
 ## Quick Reference
 
-| File                             | Role                                                          |
-| -------------------------------- | ------------------------------------------------------------- |
-| `convex/http_chat.ts`            | Server-side streaming: AI SDK, SSE, batched DB flush          |
-| `convex/messages_internals.ts`   | Internal mutations for streaming lifecycle                    |
-| `src/messages/store/messages.ts` | Legend-State merge layer (persisted + streaming + optimistic) |
-| `src/messages/hooks/use-chat.ts` | Core streaming hook: SSE consumer, abort, handoff             |
-| `src/lib/sse.ts`                 | SSE client: parses events, dispatches callbacks               |
-| [patterns.md](patterns.md)      | Server flush, SSE consumer, tool calls, crash recovery details |
+| File                             | Role                                                           |
+| -------------------------------- | -------------------------------------------------------------- |
+| `convex/http_chat.ts`            | Server-side streaming: AI SDK, SSE, batched DB flush           |
+| `convex/messages_internals.ts`   | Internal mutations for streaming lifecycle                     |
+| `src/messages/store/messages.ts` | Legend-State merge layer (persisted + streaming + optimistic)  |
+| `src/messages/hooks/use-chat.ts` | Core streaming hook: SSE consumer, abort, handoff              |
+| `src/lib/sse.ts`                 | SSE client: parses events, dispatches callbacks                |
+| [patterns.md](patterns.md)       | Server flush, SSE consumer, tool calls, crash recovery details |
 
 ---
 
