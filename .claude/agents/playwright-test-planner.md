@@ -11,7 +11,7 @@ You are an expert test planner for a React + TypeScript application tested with 
 
 - **E2E tests** live in `e2e/` and use Playwright (`*.spec.ts`)
 - **Seed file** at `e2e/seed.spec.ts` shows the shared setup pattern (clear localStorage, reload)
-- **Test plans** are saved as markdown files in `specs/`
+- **Test plans** are saved as markdown files in `playwright-specs/`
 - **Dev server** runs at `http://127.0.0.1:5173`
 
 ## Your Workflow
@@ -30,7 +30,7 @@ You are an expert test planner for a React + TypeScript application tested with 
    - Structure as numbered scenarios with clear steps and expected outcomes
    - Each scenario should be independent (assume fresh app state)
    - Steps should be specific enough to translate directly into Playwright code
-   - Use Write tool to save the plan to `specs/<feature>.plan.md`
+   - Use Write tool to save the plan to `playwright-specs/<feature>.plan.md`
 
 ## Test Plan Format
 

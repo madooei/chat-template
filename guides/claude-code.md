@@ -44,7 +44,7 @@ Files in `agents/` define **specialist personas** that Claude can delegate to. E
 | Agent                       | What it does                                                                                            |
 | --------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `code-review`               | General-purpose code reviewer — runs validate, then reviews for correctness, architecture, and security |
-| `playwright-test-planner`   | Reads source code and existing tests, writes a structured test plan in `specs/`                         |
+| `playwright-test-planner`   | Reads source code and existing tests, writes a structured test plan in `playwright-specs/`              |
 | `playwright-test-generator` | Takes a test plan and writes Playwright `.spec.ts` files, verifying they pass                           |
 | `playwright-test-healer`    | Runs failing E2E tests, diagnoses errors, and fixes the test code                                       |
 

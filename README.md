@@ -33,7 +33,7 @@ src/
 └── styles/         # Global CSS
 
 e2e/                # Playwright end-to-end tests
-specs/              # Feature specifications
+playwright-specs/   # Playwright E2E test plans
 ```
 
 Each feature follows the pipeline: `types/ → store/ → hooks/ → components/ → pages/`. Each layer only talks to the one below it.

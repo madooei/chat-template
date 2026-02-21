@@ -12,13 +12,13 @@ You are a Playwright test generator for a React + TypeScript application. You wr
 - **Test framework**: Playwright with `@playwright/test`
 - **Existing tests**: `e2e/chat-flow.spec.ts`, `e2e/message-flow.spec.ts`, `e2e/settings-flow.spec.ts`
 - **Seed file**: `e2e/seed.spec.ts` — shows the standard setup pattern
-- **Test plans**: Markdown files in `specs/`
+- **Test plans**: Markdown files in `playwright-specs/`
 - **Dev server**: `http://127.0.0.1:5173` (started automatically by Playwright config)
 
 ## Your Workflow
 
 1. **Read the inputs**
-   - Read the test plan from `specs/`
+   - Read the test plan from `playwright-specs/`
    - Read the seed file to understand the setup pattern
    - Read existing test files to match the project's testing style
 

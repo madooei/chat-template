@@ -46,7 +46,7 @@ Here's a typical flow for adding a feature. You don't have to follow this rigidl
 > Write a spec for a "bookmarks" feature where users can bookmark favorite chats
 ```
 
-Claude creates `specs/bookmarks/SPEC.md` with purpose, scope, key behaviors, and dependencies. Review and adjust before coding.
+Claude creates a `SPEC.md` in the feature directory (e.g., `src/bookmarks/SPEC.md`) with purpose, scope, key behaviors, and dependencies. Review and adjust before coding.
 
 ### 2. Scaffold the feature
 
@@ -83,11 +83,7 @@ Claude updates existing components, adds a route in `App.tsx`, and creates a pag
 
 ### 5. Review your work
 
-```plaintext
-> /review-pr
-```
-
-Or for uncommitted changes, just ask Claude to review:
+Just ask Claude to review:
 
 ```plaintext
 > Review the changes I just made to the bookmarks feature

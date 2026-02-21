@@ -46,7 +46,7 @@ src/
 └── styles/         # Global CSS
 
 e2e/                # Playwright end-to-end tests
-specs/              # Feature specifications
+playwright-specs/   # Playwright E2E test plans
 guides/             # How-to guides for students
 docs/               # Iteration plans, PRD, team agreement
 ```

@@ -55,14 +55,14 @@ Claude dispatches to the planner agent, which:
 1. Reads the relevant source files (components, hooks, pages)
 2. Reads existing E2E tests to understand what's already covered
 3. Reads the seed file (`e2e/seed.spec.ts`) for the setup pattern
-4. Writes a structured test plan to `specs/` (e.g., `specs/theme-toggle.plan.md`)
+4. Writes a structured test plan to `playwright-specs/` (e.g., `playwright-specs/theme-toggle.plan.md`)
 
 Review the plan before generating tests. Remove scenarios you don't need, add ones the agent missed, and adjust expected behaviors.
 
 ### Step 2: Generate
 
 ```plaintext
-> Generate E2E tests from specs/theme-toggle.plan.md
+> Generate E2E tests from playwright-specs/theme-toggle.plan.md
 ```
 
 Claude dispatches to the generator agent, which:
