@@ -118,9 +118,7 @@ export async function streamChatSSE({
                 onToolResult?.(JSON.parse(eventData) as ToolResultData);
                 break;
               case "message-created":
-                onMessageCreated?.(
-                  JSON.parse(eventData) as MessageCreatedData,
-                );
+                onMessageCreated?.(JSON.parse(eventData) as MessageCreatedData);
                 break;
             }
 

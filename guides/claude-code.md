@@ -9,7 +9,6 @@ This project uses [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 
 ├── rules/        # Constraints Claude always follows
 ├── skills/       # Deep knowledge Claude consults for specific tasks
 ├── commands/     # Slash commands you invoke manually
-├── prompts/      # Slash commands that delegate to agents
 ├── agents/       # Specialist personas for complex tasks
 ├── hooks/        # Shell scripts that run automatically on events
 ├── settings.json # Project-level settings (shared, committed)
@@ -34,29 +33,20 @@ To see what skills are available, browse `.claude/skills/` or look at the skill 
 
 Files in `commands/` define **slash commands** you type manually. They're step-by-step instructions for Claude to follow.
 
-| Command               | What it does                                                   |
-| --------------------- | -------------------------------------------------------------- |
-| `/checkpoint`         | Creates a well-structured commit following project conventions |
-| `/review-pr <number>` | Reviews a pull request for quality and conventions             |
-
-## Prompts
-
-Files in `prompts/` are slash commands that **delegate to an agent**. They're similar to commands but specify which agent handles the work.
-
-The prompts in this project are Playwright-related — they invoke the test planner, generator, and healer agents.
+| Command               | What it does                                  |
+| --------------------- | --------------------------------------------- |
+| `/review-pr <number>` | Reviews a PR for conventions and code quality |
 
 ## Agents
 
-Files in `agents/` define **specialist personas** that Claude can delegate to. Each agent has a name, model, allowed tools, and detailed instructions.
+Files in `agents/` define **specialist personas** that Claude can delegate to. Each agent has a name, model, allowed tools, and detailed instructions. Claude auto-dispatches to the right agent based on the task, or you can ask explicitly (e.g., "use the playwright-test-healer agent").
 
-| Agent                       | What it does                                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `code-review`               | General-purpose code reviewer — runs lint/type-check, then reviews for correctness, architecture, and security |
-| `playwright-test-planner`   | Plans E2E test coverage from feature specs                                                                     |
-| `playwright-test-generator` | Writes Playwright tests using the browser MCP                                                                  |
-| `playwright-test-healer`    | Fixes broken Playwright tests                                                                                  |
-
-Agents are invoked automatically when Claude decides a task needs a specialist, or through prompts that target them.
+| Agent                       | What it does                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `code-review`               | General-purpose code reviewer — runs validate, then reviews for correctness, architecture, and security |
+| `playwright-test-planner`   | Reads source code and existing tests, writes a structured test plan in `playwright-specs/`              |
+| `playwright-test-generator` | Takes a test plan and writes Playwright `.spec.ts` files, verifying they pass                           |
+| `playwright-test-healer`    | Runs failing E2E tests, diagnoses errors, and fixes the test code                                       |
 
 ## Hooks
 
@@ -72,6 +62,6 @@ This project has one hook: `validate-before-commit.sh` runs `pnpm run validate` 
 ## Tips
 
 - **Read the skills** — Even if you never use Claude Code, the skill files document the project's conventions and patterns. They're teaching material.
-- **Use `/checkpoint`** — It creates better commit messages than writing them by hand.
-- **Use `/review-pr`** — Run it on your own PR before requesting human review. It catches convention violations and obvious issues.
+- **Use `/commit`** — Claude's built-in commit command follows the project's commit conventions automatically.
+- **Use `/review-pr`** — Run it on your own PR before requesting human review. It catches convention violations and code issues.
 - **Check `settings.json`** — If Claude keeps asking permission for a command you always approve, add it to the `permissions.allow` array.

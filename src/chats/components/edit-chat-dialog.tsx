@@ -33,9 +33,10 @@ const EditChatDialog: React.FC<EditChatDialogProps> = ({
   // Use direct useQuery instead of useQueryMessages to avoid its unmount
   // disposal side-effect, which would wipe the shared message store for
   // still-mounted consumers (e.g., the active chat view).
-  const chatMessages = useQuery(api.messages_queries.getByChat, {
-    chatId: chat._id as Id<"chats">,
-  }) ?? [];
+  const chatMessages =
+    useQuery(api.messages_queries.getByChat, {
+      chatId: chat._id as Id<"chats">,
+    }) ?? [];
   const suggestTitle = useAction(api.chats_actions.suggestTitle);
 
   const canSuggest = chatMessages.length > 0;

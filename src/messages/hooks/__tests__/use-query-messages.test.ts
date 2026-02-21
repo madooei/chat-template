@@ -19,8 +19,7 @@ vi.mock("@/messages/store/messages", () => ({
   syncPersistedMessages: (...args: unknown[]) =>
     mockSyncPersistedMessages(...args),
   getMergedMessages: (...args: unknown[]) => mockGetMergedMessages(...args),
-  disposeChatMessages: (...args: unknown[]) =>
-    mockDisposeChatMessages(...args),
+  disposeChatMessages: (...args: unknown[]) => mockDisposeChatMessages(...args),
 }));
 
 import { useQueryMessages } from "../use-query-messages";

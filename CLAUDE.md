@@ -1,6 +1,6 @@
 # Project Configuration
 
-**Important:**  Run `pnpm validate` after you make any changes to the code. It runs the type-check, lint, and test commands.
+**Important:** Run `pnpm validate` after you make any changes to the code. It runs the type-check, lint, and test commands.
 
 ## Project Description
 
@@ -46,7 +46,7 @@ src/
 └── styles/         # Global CSS
 
 e2e/                # Playwright end-to-end tests
-specs/              # Feature specifications
+playwright-specs/   # Playwright E2E test plans
 guides/             # How-to guides for students
 docs/               # Iteration plans, PRD, team agreement
 ```

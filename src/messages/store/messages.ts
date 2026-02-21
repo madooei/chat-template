@@ -121,10 +121,7 @@ export function appendStreamingContent(
 /**
  * Set the server-assigned message ID for the streaming message.
  */
-export function setStreamingMessageId(
-  chatId: string,
-  messageId: string,
-): void {
+export function setStreamingMessageId(chatId: string, messageId: string): void {
   ensureChat(chatId);
   chatMessages$[chatId].streaming.messageId.set(messageId);
 }

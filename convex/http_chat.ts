@@ -82,9 +82,7 @@ app.post("/api/chat", async (c) => {
     const FLUSH_INTERVAL_MS = 200;
     const MIN_FLUSH_SIZE = 100;
 
-    let messageId: Awaited<
-      ReturnType<typeof ctx.runMutation>
-    > | null = null;
+    let messageId: Awaited<ReturnType<typeof ctx.runMutation>> | null = null;
     let fullText = "";
 
     try {

@@ -138,10 +138,7 @@ describe("useChat", () => {
       sseArgs.onMessageCreated({ messageId: "msg-123" });
     });
 
-    expect(mockSetStreamingMessageId).toHaveBeenCalledWith(
-      "chat-1",
-      "msg-123",
-    );
+    expect(mockSetStreamingMessageId).toHaveBeenCalledWith("chat-1", "msg-123");
   });
 
   it("abort calls clearStreaming", async () => {
