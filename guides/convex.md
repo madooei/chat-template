@@ -43,7 +43,7 @@ After setup, the dev server watches `convex/` for changes and deploys them autom
 
 ### 3. Generate Auth Keys
 
- `@convex-dev/auth` needs a JWT key pair to sign session tokens. Generate them by running the following command in another terminal:
+`@convex-dev/auth` needs a JWT key pair to sign session tokens. Generate them by running the following command in another terminal:
 
 ```bash
 npx @convex-dev/auth
