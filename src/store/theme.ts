@@ -1,7 +1,7 @@
 import { createPersistedObservable } from "@/store/persisted-observable";
 import type { Theme } from "@/types/theme";
 
-function decodeTheme(value: unknown): Theme {
+export function decodeTheme(value: unknown): Theme {
   if (value === "dark" || value === "light" || value === "system") {
     return value;
   }
