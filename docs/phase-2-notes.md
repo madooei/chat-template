@@ -296,11 +296,13 @@ The end-to-end streaming dance. Covers:
 
 ## Open Items / Future Decisions
 
-- [ ] Decide: should auto-title generation use the same HTTP endpoint or a separate one?
-- [ ] Decide: conversation context window — send all messages or cap at N?
-- [ ] Decide: system prompt — hardcoded or configurable per chat?
-- [ ] Decide: how to handle the settings page in Phase 2 (API key gone, what stays?)
-- [ ] Decide: model persistence — save selected model per chat or keep it session-only?
-- [ ] Investigate: Convex action runtime compatibility with Vercel AI SDK packages
-- [ ] Investigate: Hono SSE behavior with Convex HTTP actions (any gotchas?)
-- [ ] Plan: migration path for existing Phase 1 localStorage/IndexedDB data (if any)
+All items resolved during Phase 2 implementation:
+
+- [x] **Auto-title generation:** Uses inline auto-title during streaming — after the first assistant response in a "New Chat", the HTTP action generates a title via a second `streamText()` call and saves it with an internal mutation. No separate endpoint needed.
+- [x] **Conversation context window:** Sends all messages to the AI provider. Documented as a known gap in both `src/chats/SPEC.md` and `src/messages/SPEC.md`.
+- [x] **System prompt:** Hardcoded as a weather assistant in `convex/http_chat.ts`. Documented as a known gap in both SPECs.
+- [x] **Settings page:** API key field removed (server-side env var now). Only `displayName` remains in settings, backed by Legend-State + localStorage.
+- [x] **Model persistence:** Session-only — model selection is not persisted per chat. Documented as a known gap in both SPECs.
+- [x] **AI SDK runtime compatibility:** Confirmed working. Vercel AI SDK's `streamText()` runs inside Convex HTTP actions with `@openrouter/ai-sdk-provider`.
+- [x] **Hono SSE behavior:** Confirmed working. Hono's `streamSSE()` inside Convex HTTP actions streams correctly with no known gotchas.
+- [x] **Phase 1 data migration:** Clean break, no migration. Phase 2 uses a completely separate Convex backend. Phase 1 IndexedDB/localStorage data is irrelevant.
