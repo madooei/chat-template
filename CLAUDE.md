@@ -42,15 +42,19 @@ src/
 ├── messages/       # Messages feature (same structure)
 ├── settings/       # Settings feature (same structure)
 ├── components/     # Shared UI (shadcn, prompt-kit)
+├── config/         # App configuration constants
+├── hooks/          # Shared React hooks
 ├── layout/         # App shell (header, sidebar)
 ├── lib/            # Utilities (AI provider wrapper)
 ├── test/           # Test setup and helpers
+├── types/          # Shared TypeScript types and Zod schemas
 └── styles/         # Global CSS
 
 e2e/                # Playwright end-to-end tests
 playwright-specs/   # Playwright E2E test plans
 guides/             # How-to guides for students
 docs/               # Iteration plans, PRD, team agreement
+manuals/            # End-user manuals with screenshots
 ```
 
 ## Branch & Commit Conventions
