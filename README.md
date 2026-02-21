@@ -2,6 +2,13 @@
 
 A "bring your own API key" AI chat application built with React, Vite, Legend-State, and Wouter. Users pick a provider, supply their own key, and chat — all running locally with no backend.
 
+## Prerequisites
+
+- [Git](https://git-scm.com/downloads)
+- [GitHub CLI (`gh`)](https://cli.github.com/) — used for issue, label, milestone, and PR management
+- [Node.js 18+](https://nodejs.org/en/download/) — includes npm
+- [pnpm](https://pnpm.io/) — install with `npm install -g pnpm`
+
 ## Getting Started
 
 ```bash
@@ -20,13 +27,19 @@ src/
 ├── messages/       # Messages feature (same structure)
 ├── settings/       # Settings feature (same structure)
 ├── components/     # Shared UI (shadcn, prompt-kit)
+├── config/         # App configuration constants
+├── hooks/          # Shared React hooks
 ├── layout/         # App shell (header, sidebar)
 ├── lib/            # Utilities (AI provider wrapper)
 ├── test/           # Test setup and helpers
+├── types/          # Shared TypeScript types and Zod schemas
 └── styles/         # Global CSS
 
 e2e/                # Playwright end-to-end tests
-specs/              # Feature specifications
+playwright-specs/   # Playwright E2E test plans
+guides/             # How-to guides for students
+docs/               # Iteration plans, PRD, team agreement
+manuals/            # End-user manuals with screenshots
 ```
 
 Each feature follows the pipeline: `types/ → store/ → hooks/ → components/ → pages/`. Each layer only talks to the one below it.
@@ -51,7 +64,7 @@ Each feature follows the pipeline: `types/ → store/ → hooks/ → components/
 
 **E2E tests** use Playwright with Chromium. Tests live in `e2e/` and interact through accessibility roles, not CSS selectors. Playwright auto-starts the dev server — just run `pnpm run test:e2e`. Each test clears localStorage and reloads to start from a clean slate.
 
-**AI-assisted testing** — three Claude Code agents (`.claude/agents/`) use Playwright's MCP server to plan, generate, and heal E2E tests from plain English descriptions.
+**AI-assisted testing** — Claude Code agents (`.claude/agents/`) use Playwright's MCP server to plan, generate, and heal E2E tests from plain English descriptions. Additional agents handle code review and user manual generation.
 
 ## Tech Stack
 

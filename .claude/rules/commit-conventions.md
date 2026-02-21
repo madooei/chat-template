@@ -15,4 +15,3 @@ Examples:
 Do not co-sign the commit! For example, do not end the commit with something like this:
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-

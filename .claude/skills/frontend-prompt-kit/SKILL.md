@@ -176,12 +176,9 @@ import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
 
 The docs site is not accessible programmatically, so this skill folder contains manually copied documentation:
 
-| File                                             | Description                                                 |
-| ------------------------------------------------ | ----------------------------------------------------------- |
-| [prompt-kit-llm.md](prompt-kit-llm.md)           | Short summary — component overview, quick API reference     |
-| [prompt-kit-llm-full.md](prompt-kit-llm-full.md) | Full docs — detailed component APIs, props tables, examples |
-
-Start with the short version. Use the full version when you need detailed prop tables or usage examples.
+| File                                   | Description                                                         |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| [prompt-kit-llm.md](prompt-kit-llm.md) | Component overview, API reference, props tables, and usage examples |
 
 ---
 

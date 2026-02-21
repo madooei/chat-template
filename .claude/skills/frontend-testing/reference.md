@@ -336,7 +336,7 @@ Use the `playwright-test-plan` prompt template:
 Create test plan for "chat management" functionality of my app.
 
 - Seed file: `e2e/seed.spec.ts`
-- Test plan: `specs/chat.plan.md`
+- Test plan: `playwright-specs/chat.plan.md`
 ```
 
 ### Generate tests from a plan
@@ -344,7 +344,7 @@ Create test plan for "chat management" functionality of my app.
 Use the `playwright-test-generate` prompt template:
 
 ```plaintext
-Generate tests for bullet 1.1 from `specs/chat.plan.md`.
+Generate tests for bullet 1.1 from `playwright-specs/chat.plan.md`.
 ```
 
 ### Fix failing tests
@@ -362,7 +362,7 @@ Use the `playwright-test-coverage` prompt template:
 ```plaintext
 Task: chat management
 Seed file: e2e/seed.spec.ts
-Test plan file: specs/chat.plan.md
+Test plan file: playwright-specs/chat.plan.md
 ```
 
 This runs the planner, then generates each test case one by one, then heals any failures.
