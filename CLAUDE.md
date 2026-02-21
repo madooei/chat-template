@@ -4,11 +4,11 @@
 
 ## Project Description
 
-A "bring your own API key" AI chat application. Users pick a provider, supply their own key, and chat — all running locally with no backend. Phase 1 of a multi-phase template.
+A "bring your own API key" AI chat application. Users pick a provider, supply their own key, and chat. Phase 2 adds a Convex backend with anonymous auth, SSE streaming via Hono, and server-side AI calls through OpenRouter.
 
 ## Tech Stack
 
-React 19, TypeScript, Vite, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, prompt-kit, Vercel AI SDK, Vitest, Playwright
+React 19, TypeScript, Vite, Convex, Hono, @convex-dev/auth, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, prompt-kit, Vercel AI SDK, @openrouter/ai-sdk-provider, Vitest, Playwright
 
 ## Commands
 
@@ -36,25 +36,26 @@ React 19, TypeScript, Vite, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, pr
 Feature-based modules following a pipeline: `types/ → store/ → hooks/ → components/ → pages/`. Each layer only talks to the one below it.
 
 ```plaintext
+convex/              # Convex backend (schema, queries, mutations, HTTP endpoints)
 src/
-├── store/          # Shared state utilities (persisted observable)
-├── chats/          # Chat feature (types, store, hooks, components, pages)
-├── messages/       # Messages feature (same structure)
-├── settings/       # Settings feature (same structure)
-├── components/     # Shared UI (shadcn, prompt-kit)
-├── config/         # App configuration constants
-├── hooks/          # Shared React hooks
-├── layout/         # App shell (header, sidebar)
-├── lib/            # Utilities (AI provider wrapper)
-├── test/           # Test setup and helpers
-├── types/          # Shared TypeScript types and Zod schemas
-└── styles/         # Global CSS
+├── store/           # Shared state utilities (persisted observable, theme)
+├── chats/           # Chat feature (types, store, hooks, components, pages)
+├── messages/        # Messages feature (same structure)
+├── settings/        # Settings feature (same structure)
+├── components/      # Shared UI (shadcn, prompt-kit)
+├── config/          # App configuration constants
+├── hooks/           # Shared React hooks (auth, theme, window size)
+├── layout/          # App shell (header, sidebar)
+├── lib/             # Utilities (Convex client, SSE consumer, cn helper)
+├── test/            # Test setup and helpers
+├── types/           # Shared types (theme only; feature types live in feature modules)
+└── styles/          # Global CSS
 
-e2e/                # Playwright end-to-end tests
-playwright-specs/   # Playwright E2E test plans
-guides/             # How-to guides for students
-docs/               # Iteration plans, PRD, team agreement
-manuals/            # End-user manuals with screenshots
+e2e/                 # Playwright end-to-end tests
+playwright-specs/    # Playwright E2E test plans
+guides/              # How-to guides for students
+docs/                # Iteration plans, PRD, team agreement
+manuals/             # End-user manuals with screenshots
 ```
 
 ## Branch & Commit Conventions
