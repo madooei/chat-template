@@ -1,43 +1,37 @@
 # Getting Started
 
-Chat Template is a "bring your own API key" AI chat app that runs entirely in your browser. Your conversations and settings stay on your device — nothing is sent to a backend. This guide walks you through the complete first-time setup: adding your API key, creating a chat, and sending your first message.
+Chat Template is an AI chat application with built-in tools that runs in your browser. You sign in automatically — no account creation or API key required. This guide walks you through the complete experience: opening the app, setting your display name, starting a chat, and trying the built-in weather tool.
 
 ## Step 1: Open the App
 
-When you open the app for the first time, you will see the welcome screen. The left sidebar shows the chat list (currently empty), and the main area invites you to start a conversation.
+When you open the app, it signs you in automatically in the background. You will see the welcome screen within a few seconds.
 
 ![The app on first open, showing the welcome screen and empty chat list](images/getting-started-home-empty.png)
 
-The header at the top contains the app logo, a settings button (gear icon), and a theme toggle. The sidebar shows a "New Chat" button and a search box that you will use once you have chats.
+The left sidebar shows your chat list (currently empty) along with a **New Chat** button and a search box. The main area displays a "Welcome to Chat Template" message and a second **New Chat** button. The header at the top contains the app logo, a settings button (gear icon), and a theme toggle.
 
-## Step 2: Add Your OpenRouter API Key
+## Step 2: Set Your Display Name (Optional)
 
-Chat Template does not come with a built-in AI key. You need to provide your own [OpenRouter](https://openrouter.ai) API key before the app can send messages to any AI model.
+You can give yourself a display name so the app knows what to call you.
 
-1. Click the gear icon in the top-right corner of the header to open the Settings dialog.
+1. Click the **gear icon** in the top-right corner of the header to open the Settings dialog.
 
-![The Settings dialog, open and empty](images/getting-started-settings-empty.png)
+![The Settings dialog showing only the Display Name field](images/getting-started-settings.png)
 
-2. Enter a **Display Name** — this is how you will be identified in the conversation view.
-3. Paste your **OpenRouter API Key** into the second field. The key is masked by default; click the eye icon on the right to reveal it if you need to verify it.
+2. Type your name into the **Display Name** field.
+3. Click **Save**. The dialog closes and your name is stored.
 
-![The Settings dialog with a display name and API key filled in](images/getting-started-settings-filled.png)
-
-> **Note:** The amber warning below the key field is a reminder that client-side API keys can be exposed to browser extensions and other scripts running on the same page. Use this app in a trusted environment and avoid storing high-credit keys here.
-
-4. Click **Save**. The dialog closes and your settings are stored locally in your browser.
+> **Tip:** The Save button is only active when you have made a change. If the button appears greyed out, make sure you have typed something different from the current value.
 
 ## Step 3: Create a New Chat
 
-With your API key saved, you are ready to start a conversation.
+Click the **New Chat** button — either in the sidebar or the main welcome area. The app creates a new chat and opens it immediately.
 
-Click the **New Chat** button in the top-right area of the sidebar. The app creates a new chat immediately and navigates to it.
+![A new empty chat showing the suggestion chips and message input](images/getting-started-new-chat.png)
 
-![The app after creating a new chat, showing the empty chat view with prompt suggestions](images/getting-started-new-chat.png)
+The chat opens in the main area with four suggestion chips in the centre: "Explain quantum computing in simple terms", "Write a short poem about the ocean", "What are the best practices for React?", and "Help me plan a weekend trip". Click any chip to insert that text into the message input ready to send.
 
-The new chat opens in the main area. You will see four suggestion prompts in the centre of the screen — clicking any of them inserts that text into the message input so you can send it with one more click.
-
-The sidebar now lists your new chat under a "Today" heading, and the chat title ("New Chat") appears in the main panel header.
+The sidebar now lists the new chat under a "Today" heading. The current AI model ("Claude Sonnet 4.5") is shown in the top-right corner of the chat view.
 
 > **Tip:** You can create as many chats as you like. Each chat keeps its own independent message history.
 
@@ -45,28 +39,27 @@ The sidebar now lists your new chat under a "Today" heading, and the chat title 
 
 Type your question or prompt into the input box at the bottom of the chat view.
 
-![The message input with a question typed in, send button now active](images/getting-started-typing-message.png)
+![The message input with a weather question typed in and the send button active](images/getting-started-typing-message.png)
 
 You can send the message in two ways:
 
 - Press **Enter** to send immediately.
 - Click the **send button** (arrow icon) in the bottom-right corner of the input area.
 
-> **Tip:** If you need to write a multi-line message, press **Shift+Enter** to insert a line break without sending.
+> **Tip:** To write a multi-line message, press **Shift+Enter** to insert a line break without sending.
 
-Once sent, the AI model begins generating a response. A "Thinking" indicator appears while the response streams in. When the response is complete, both your message and the AI's reply appear in the conversation.
+## Step 5: Try the Weather Tool
 
-![A completed conversation showing a user message and an AI response](images/getting-started-conversation.png)
+The app includes a built-in weather tool. Ask the AI about the weather in any city and it will look up live data for you.
 
-Your message appears on the right side of the conversation. The AI's response appears on the left, with any markdown — such as **bold text** — rendered inline.
+Type something like "What's the weather in Paris?" and press **Enter**.
 
-You can continue the conversation by typing another message in the input box. The model remembers the full context of the current chat.
+![The completed conversation showing the user's weather question and the AI's response with real weather data](images/getting-started-weather-response.png)
+
+The AI fetches current weather data and replies with the temperature and conditions for that city. The chat title updates automatically to reflect what you asked about.
+
+You can continue the conversation by typing another message. Ask about a different city, or ask the AI to compare conditions in two places.
 
 ## Choosing a Different AI Model
 
 By default, the app uses Claude Sonnet 4.5. You can switch to a different model at any time using the model selector in the top-right corner of the chat view. Click the model name to open a dropdown and choose another option. The selected model applies to all subsequent messages in that chat session.
-
-## What's Stored Where
-
-- **Settings** (display name and API key) are saved in your browser's `localStorage`. They persist across sessions until you clear browser data.
-- **Chats and messages** are saved in your browser's IndexedDB database. They also persist across sessions and are never sent to any server.
