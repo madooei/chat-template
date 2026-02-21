@@ -10,6 +10,10 @@ if [[ ! "$COMMAND" =~ git[[:space:]]+commit ]]; then
   exit 0
 fi
 
+# Format code and re-stage any changes
+pnpm run format 2>&1
+git add -u 2>/dev/null
+
 # Run the full validation suite
 if ! pnpm run validate 2>&1; then
   echo "Validation failed. Fix errors before committing." >&2

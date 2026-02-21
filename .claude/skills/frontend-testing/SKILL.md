@@ -126,11 +126,11 @@ Three custom agents in `.claude/agents/` automate E2E test creation and maintena
 
 ### Three-Agent Workflow
 
-| Agent     | Role                                                                 |
-| --------- | -------------------------------------------------------------------- |
+| Agent     | Role                                                                            |
+| --------- | ------------------------------------------------------------------------------- |
 | Planner   | Reads source code + existing tests, produces a test plan in `playwright-specs/` |
-| Generator | Takes a test plan, writes `.spec.ts` files, verifies they pass       |
-| Healer    | Runs failing tests, diagnoses errors, fixes the code                 |
+| Generator | Takes a test plan, writes `.spec.ts` files, verifies they pass                  |
+| Healer    | Runs failing tests, diagnoses errors, fixes the code                            |
 
 ### Key Files
 
