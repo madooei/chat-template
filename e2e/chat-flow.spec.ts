@@ -97,7 +97,10 @@ test.describe("Chat flow", () => {
 
     // Wait for the second chat to appear in the sidebar before trying to edit it
     await expect(
-      page.getByRole("complementary").getByRole("listitem").filter({ hasText: "New Chat" }),
+      page
+        .getByRole("complementary")
+        .getByRole("listitem")
+        .filter({ hasText: "New Chat" }),
     ).toBeVisible();
 
     // Scope the listitem filter to the sidebar (complementary) to avoid ambiguity
