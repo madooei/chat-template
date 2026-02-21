@@ -105,7 +105,7 @@ app.post("/api/chat", async (c) => {
         tools: weatherTools,
         stopWhen: stepCountIs(5),
         system:
-          "You are a helpful assistant. When the user asks about weather, use the provided tools to look up weather information. Always call getLocation first to get the latitude and longitude, then use those coordinates with getCurrentWeather.",
+          "You are a helpful, general-purpose assistant. You have access to weather tools — if the user asks about weather, call getLocation first to get coordinates, then use getCurrentWeather with those coordinates.",
         onStepFinish: ({ text, toolCalls, toolResults, finishReason }) => {
           console.log("[chat] step finished:", {
             finishReason,
