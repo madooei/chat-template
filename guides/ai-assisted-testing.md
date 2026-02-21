@@ -13,7 +13,7 @@ This guide walks you through using Claude Code to write and maintain tests. It c
 
 **Unit and integration tests** — Ask Claude directly. It uses the `frontend-testing` skill to generate Vitest tests that follow the project's patterns.
 
-**E2E tests** — Use the Playwright agent pipeline. Three specialist agents plan, generate, and fix browser tests by actually running the app.
+**E2E tests** — Use the Playwright agents. Three specialist agents plan, generate, and fix browser tests.
 
 ## Writing Unit and Integration Tests
 
@@ -36,100 +36,90 @@ Claude picks the right test pattern (store test, `renderHook`, or `render` + `us
 
 ## The Playwright Agent Pipeline
 
-E2E tests use three specialist agents that talk to a real browser through an MCP server. Each agent has a specific job:
+Three agents in `.claude/agents/` handle E2E test creation and maintenance. Claude auto-dispatches to the right agent based on what you ask, or you can request one explicitly.
 
-| Agent         | What it does                                                                          | Invoke with                 |
-| ------------- | ------------------------------------------------------------------------------------- | --------------------------- |
-| **Planner**   | Opens the app, explores it, writes a structured test plan                             | `/playwright-test-plan`     |
-| **Generator** | Takes a test case from the plan, executes it in a browser, writes the `.spec.ts` file | `/playwright-test-generate` |
-| **Healer**    | Runs failing tests, debugs them, fixes the code                                       | `/playwright-test-heal`     |
-
-There's also `/playwright-test-coverage` which runs all three in sequence.
+| Agent         | What it does                                                   |
+| ------------- | -------------------------------------------------------------- |
+| **Planner**   | Reads source code and existing tests, writes a structured plan |
+| **Generator** | Takes a test plan, writes `.spec.ts` files, verifies they pass |
+| **Healer**    | Runs failing tests, diagnoses errors, fixes the code           |
 
 ### Step 1: Plan
 
 ```plaintext
-> /playwright-test-plan
-> Plan tests for the chat management feature
+> Plan E2E tests for the theme toggle feature
 ```
 
-The planner agent:
+Claude dispatches to the planner agent, which:
 
-1. Reads the seed file (`e2e/seed.spec.ts`) to understand the app's starting state
-2. Opens the app in a real browser and explores the UI
-3. Maps out user flows and edge cases
-4. Saves a structured test plan to `specs/` (e.g., `specs/chat.plan.md`)
+1. Reads the relevant source files (components, hooks, pages)
+2. Reads existing E2E tests to understand what's already covered
+3. Reads the seed file (`e2e/seed.spec.ts`) for the setup pattern
+4. Writes a structured test plan to `specs/` (e.g., `specs/theme-toggle.plan.md`)
 
 Review the plan before generating tests. Remove scenarios you don't need, add ones the agent missed, and adjust expected behaviors.
 
 ### Step 2: Generate
 
 ```plaintext
-> /playwright-test-generate
-> Generate tests for item 1.1 from specs/chat.plan.md
+> Generate E2E tests from specs/theme-toggle.plan.md
 ```
 
-The generator agent:
+Claude dispatches to the generator agent, which:
 
-1. Reads the test case from the plan
-2. Opens the app and manually executes each step in a real browser
-3. Records what it did (clicks, types, assertions)
-4. Writes the test to a `.spec.ts` file
-
-Each test case becomes one file. The agent executes the steps in a real browser first, so the generated test matches actual app behavior — not just what the plan says should happen.
+1. Reads the test plan and the seed file
+2. Reads existing test files to match the project's style
+3. Writes the test file (e.g., `e2e/theme-toggle.spec.ts`)
+4. Runs the test with `npx playwright test` to verify it passes
+5. Iterates if the test fails — reads errors, fixes code, reruns
 
 ### Step 3: Heal
 
 ```plaintext
-> /playwright-test-heal
+> Fix the failing E2E tests
 ```
 
-The healer agent:
+Claude dispatches to the healer agent, which:
 
-1. Runs all E2E tests with `test_run`
-2. For each failure, runs `test_debug` to pause at the error
-3. Inspects the page (snapshots, console, network) to diagnose the issue
-4. Edits the test code to fix it
-5. Reruns until all tests pass
-
-If a test can't be fixed (the app genuinely doesn't match the expectation), the healer marks it `test.fixme()` with a comment explaining the mismatch.
+1. Runs all E2E tests with `npx playwright test`
+2. For each failure, reads the error output and the test file
+3. Diagnoses the root cause (selector changed, timing issue, app behavior changed)
+4. Fixes the test code and reruns to verify
+5. If a test can't be fixed, marks it `test.fixme()` with a comment
 
 ### The Full Pipeline
 
-For a new feature with no existing E2E tests:
+For a new feature with no existing E2E tests, you can ask for all three steps:
 
 ```plaintext
-> /playwright-test-coverage
-> Cover the settings feature
+> Plan and generate E2E tests for the theme toggle feature, then fix any failures
 ```
-
-This orchestrates all three agents in sequence: plan the tests, generate each one, then heal any failures. It's the hands-off option.
 
 ## Hand-Written vs Agent-Generated Tests
 
 The project has both:
 
 - **Hand-written**: `e2e/chat-flow.spec.ts`, `e2e/message-flow.spec.ts`, `e2e/settings-flow.spec.ts` — maintained manually
-- **Agent-generated**: Files under `e2e/<feature>/` — created by the generator, healed by the healer
+- **Agent-generated**: Created by the generator agent, healed by the healer agent
 
 Both run together with `pnpm run test:e2e`. The agents don't touch hand-written tests.
 
 ## When to Use What
 
-| Situation                           | Approach                                              |
-| ----------------------------------- | ----------------------------------------------------- |
-| New store or hook                   | Ask Claude directly for unit tests                    |
-| New component                       | Ask Claude for component tests with RTL               |
-| New feature needs E2E coverage      | `/playwright-test-coverage` for the full pipeline     |
-| Specific user journey to test       | `/playwright-test-plan` + `/playwright-test-generate` |
-| E2E tests broke after a code change | `/playwright-test-heal`                               |
-| Quick smoke test for a small change | Write a focused test manually or ask Claude           |
+| Situation                           | Approach                                    |
+| ----------------------------------- | ------------------------------------------- |
+| New store or hook                   | Ask Claude directly for unit tests          |
+| New component                       | Ask Claude for component tests with RTL     |
+| New feature needs E2E coverage      | Ask Claude to plan and generate E2E tests   |
+| Specific user journey to test       | Ask Claude to plan, then generate from plan |
+| E2E tests broke after a code change | Ask Claude to fix the failing E2E tests     |
+| Quick smoke test for a small change | Write a focused test manually or ask Claude |
 
 ## Tips
 
-**Review generated test plans.** The planner explores the app thoroughly, but it doesn't know your requirements. Cut scenarios that test the obvious, add ones that test your edge cases.
+**Review generated test plans.** The planner reads source code thoroughly, but it doesn't know your requirements. Cut scenarios that test the obvious, add ones that test your edge cases.
 
-**Generate one test at a time.** The generator works best with a single focused test case. The full pipeline handles sequencing, but if you're running it manually, go one by one.
+**Generate one feature at a time.** The generator works best with a focused test plan. Don't ask it to cover the entire app in one go.
 
 **Run tests locally before pushing.** `pnpm run test:e2e` runs all E2E tests headless. Use `pnpm run test:e2e:ui` to watch them run in a browser if something looks wrong.
 

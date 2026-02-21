@@ -8,7 +8,7 @@ This project uses [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 
 .claude/
 ├── rules/        # Constraints Claude always follows
 ├── skills/       # Deep knowledge Claude consults for specific tasks
-├── prompts/      # Slash commands that delegate to agents
+├── commands/     # Slash commands you invoke manually
 ├── agents/       # Specialist personas for complex tasks
 ├── hooks/        # Shell scripts that run automatically on events
 ├── settings.json # Project-level settings (shared, committed)
@@ -29,30 +29,24 @@ You can also invoke a skill explicitly with `/skill-name` in the chat.
 
 To see what skills are available, browse `.claude/skills/` or look at the skill list Claude shows at the start of a session.
 
-## Prompts
+## Commands
 
-Files in `prompts/` are slash commands that **delegate to an agent**. You invoke them, but the work is handled by a specialist agent with its own context.
+Files in `commands/` define **slash commands** you type manually. They're step-by-step instructions for Claude to follow.
 
-| Prompt                      | Agent                       | What it does                                   |
-| --------------------------- | --------------------------- | ---------------------------------------------- |
-| `/review-pr <number>`       | `code-review`               | Reviews a PR for conventions and code quality  |
-| `/playwright-test-plan`     | `playwright-test-planner`   | Plans E2E test coverage for a feature          |
-| `/playwright-test-generate` | `playwright-test-generator` | Generates a Playwright test from a test plan   |
-| `/playwright-test-heal`     | `playwright-test-healer`    | Runs E2E tests and fixes failures              |
-| `/playwright-test-coverage` | (orchestrator)              | Runs the full pipeline: plan → generate → heal |
+| Command               | What it does                                  |
+| --------------------- | --------------------------------------------- |
+| `/review-pr <number>` | Reviews a PR for conventions and code quality |
 
 ## Agents
 
-Files in `agents/` define **specialist personas** that Claude can delegate to. Each agent has a name, model, allowed tools, and detailed instructions.
+Files in `agents/` define **specialist personas** that Claude can delegate to. Each agent has a name, model, allowed tools, and detailed instructions. Claude auto-dispatches to the right agent based on the task, or you can ask explicitly (e.g., "use the playwright-test-healer agent").
 
-| Agent                       | What it does                                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `code-review`               | General-purpose code reviewer — runs lint/type-check, then reviews for correctness, architecture, and security |
-| `playwright-test-planner`   | Plans E2E test coverage from feature specs                                                                     |
-| `playwright-test-generator` | Writes Playwright tests using the browser MCP                                                                  |
-| `playwright-test-healer`    | Fixes broken Playwright tests                                                                                  |
-
-Agents are invoked automatically when Claude decides a task needs a specialist, or through prompts that target them.
+| Agent                       | What it does                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `code-review`               | General-purpose code reviewer — runs validate, then reviews for correctness, architecture, and security |
+| `playwright-test-planner`   | Reads source code and existing tests, writes a structured test plan in `specs/`                         |
+| `playwright-test-generator` | Takes a test plan and writes Playwright `.spec.ts` files, verifying they pass                           |
+| `playwright-test-healer`    | Runs failing E2E tests, diagnoses errors, and fixes the test code                                       |
 
 ## Hooks
 
@@ -69,5 +63,5 @@ This project has one hook: `validate-before-commit.sh` runs `pnpm run validate` 
 
 - **Read the skills** — Even if you never use Claude Code, the skill files document the project's conventions and patterns. They're teaching material.
 - **Use `/commit`** — Claude's built-in commit command follows the project's commit conventions automatically.
-- **Use `/review-pr`** — Run it on your own PR before requesting human review. It delegates to the code-review agent and catches convention violations and code issues.
+- **Use `/review-pr`** — Run it on your own PR before requesting human review. It catches convention violations and code issues.
 - **Check `settings.json`** — If Claude keeps asking permission for a command you always approve, add it to the `permissions.allow` array.
