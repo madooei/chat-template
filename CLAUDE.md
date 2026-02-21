@@ -13,7 +13,9 @@ React 19, TypeScript, Vite, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, pr
 ## Commands
 
 - Install dependencies: `pnpm install`
-- Run development server: `pnpm run dev`
+- Run development server (backend + frontend): `pnpm run dev`
+- Run frontend only: `pnpm run dev:frontend`
+- Run backend only: `pnpm run dev:backend`
 - Run tests: `pnpm run test`
 - Run tests in watch mode: `pnpm run test:watch`
 - Run E2E tests: `pnpm run test:e2e`

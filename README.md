@@ -42,7 +42,9 @@ Each feature follows the pipeline: `types/ → store/ → hooks/ → components/
 
 | Command                | What it does                                       |
 | ---------------------- | -------------------------------------------------- |
-| `pnpm run dev`         | Start dev server                                   |
+| `pnpm run dev`         | Start backend + frontend concurrently              |
+| `pnpm run dev:frontend`| Start Vite dev server only                         |
+| `pnpm run dev:backend` | Start Convex dev server only                       |
 | `pnpm run build`       | Type-check and build for production                |
 | `pnpm run test`        | Run unit/integration tests (Vitest)                |
 | `pnpm run test:watch`  | Run tests in watch mode                            |

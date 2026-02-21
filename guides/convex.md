@@ -43,17 +43,17 @@ After setup, the dev server watches `convex/` for changes and deploys them autom
 
 ### 3. Generate Auth Keys
 
-`@convex-dev/auth` needs a JWT key pair to sign session tokens. Generate them by running:
+ `@convex-dev/auth` needs a JWT key pair to sign session tokens. Generate them by running the following command in another terminal:
 
 ```bash
 npx @convex-dev/auth
 ```
 
-This outputs two environment variables: `JWT_PRIVATE_KEY` and `JWKS`. Copy them — you'll paste them into the Convex dashboard in the next step.
+This generates `JWT_PRIVATE_KEY` and `JWKS` and automatically stores them on your Convex server.
 
 ### 4. Set Environment Variables on the Convex Dashboard
 
-Some secrets live on the Convex side (not in `.env.local`):
+In addition to the `JWT_PRIVATE_KEY` and `JWKS`, you also need to set the `OPENROUTER_API_KEY` and `SITE_URL` environment variables.
 
 1. Go to [dashboard.convex.dev](https://dashboard.convex.dev/)
 2. Select your project
@@ -67,19 +67,19 @@ Some secrets live on the Convex side (not in `.env.local`):
 | `OPENROUTER_API_KEY` | Your OpenRouter API key (for server-side AI calls)       |
 | `SITE_URL`           | `http://localhost:5173` (required by `@convex-dev/auth`) |
 
-### 5. Start the Frontend
+### 5. Start the Dev Servers
 
-In a separate terminal:
+Run both servers together:
 
 ```bash
 pnpm run dev
 ```
 
-Or use the convenience script that runs both:
+This uses `concurrently` to start the Convex backend and Vite frontend in one terminal. You can also run them separately:
 
 ```bash
-pnpm run dev:backend   # starts Convex dev server
-pnpm run dev           # starts Vite dev server (in another terminal)
+pnpm run dev:backend    # starts Convex dev server
+pnpm run dev:frontend   # starts Vite dev server (in another terminal)
 ```
 
 The app should load, auto-sign-in anonymously, and you can start chatting.

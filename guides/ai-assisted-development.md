@@ -5,7 +5,7 @@ This guide walks you through using Claude Code and the frontend skills to build 
 ## Prerequisites
 
 - Claude Code installed and working
-- The dev server runs: `pnpm run dev`
+- The dev server runs: `pnpm run dev` (or `pnpm run dev:frontend` for frontend only)
 - You've read [Claude Code](claude-code.md) to understand the `.claude/` directory
 
 ## How Skills Work
