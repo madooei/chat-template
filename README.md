@@ -40,19 +40,19 @@ Each feature follows the pipeline: `types/ → store/ → hooks/ → components/
 
 ## Scripts
 
-| Command                | What it does                                       |
-| ---------------------- | -------------------------------------------------- |
-| `pnpm run dev`         | Start backend + frontend concurrently              |
-| `pnpm run dev:frontend`| Start Vite dev server only                         |
-| `pnpm run dev:backend` | Start Convex dev server only                       |
-| `pnpm run build`       | Type-check and build for production                |
-| `pnpm run test`        | Run unit/integration tests (Vitest)                |
-| `pnpm run test:watch`  | Run tests in watch mode                            |
-| `pnpm run test:e2e`    | Run E2E tests (Playwright, auto-starts dev server) |
-| `pnpm run test:e2e:ui` | Open Playwright's interactive test runner          |
-| `pnpm run validate`    | Type-check + lint + test — the quality gate        |
-| `pnpm run lint`        | Run ESLint                                         |
-| `pnpm run format`      | Run Prettier                                       |
+| Command                 | What it does                                       |
+| ----------------------- | -------------------------------------------------- |
+| `pnpm run dev`          | Start backend + frontend concurrently              |
+| `pnpm run dev:frontend` | Start Vite dev server only                         |
+| `pnpm run dev:backend`  | Start Convex dev server only                       |
+| `pnpm run build`        | Type-check and build for production                |
+| `pnpm run test`         | Run unit/integration tests (Vitest)                |
+| `pnpm run test:watch`   | Run tests in watch mode                            |
+| `pnpm run test:e2e`     | Run E2E tests (Playwright, auto-starts dev server) |
+| `pnpm run test:e2e:ui`  | Open Playwright's interactive test runner          |
+| `pnpm run validate`     | Type-check + lint + test — the quality gate        |
+| `pnpm run lint`         | Run ESLint                                         |
+| `pnpm run format`       | Run Prettier                                       |
 
 ## Testing
 
