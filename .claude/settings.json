@@ -23,5 +23,7 @@
       "Bash(pnpm run build:*)",
       "Skill(*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": []
 }
