@@ -28,11 +28,6 @@ vi.mock("@/lib/sse", () => ({
   streamChatSSE: (...args: unknown[]) => mockStreamChatSSE(...args),
 }));
 
-vi.mock("@/lib/ai", () => ({
-  streamMastraChat: vi.fn(),
-  getMastraEndpoint: vi.fn(() => "/mastra"),
-}));
-
 const mockAddOptimisticMessage = vi.fn();
 const mockRemoveOptimisticMessage = vi.fn();
 const mockStartStreaming = vi.fn();

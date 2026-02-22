@@ -1,6 +1,6 @@
 # Mastra Integration Guide
 
-This project uses [Mastra](https://mastra.ai/) to run AI agents on the server side. The frontend sends messages to a Mastra HTTP endpoint instead of calling an LLM provider directly. This guide explains what Mastra is, how it fits into the project, and how to get it running locally and in production.
+This project uses [Mastra](https://mastra.ai/) to run AI agents on the server side. Research requests flow from the frontend through the Convex backend to a Mastra HTTP server, keeping API keys server-side and unifying auth and persistence. This guide explains what Mastra is, how it fits into the project, and how to get it running locally and in production.
 
 ## What Is Mastra
 
@@ -28,7 +28,7 @@ mastra/
 │   │   ├── researchAgent.ts              # Main research agent with web search tools
 │   │   ├── evaluationAgent.ts            # Evaluates search result relevance
 │   │   ├── learningExtractionAgent.ts    # Extracts key insights from results
-│   │   ├── reportAgent.ts                # Generates comprehensive research reports
+│   │   ├── reportAgent.ts               # Generates comprehensive research reports
 │   │   └── webSummarizationAgent.ts      # Summarizes web content (uses mini model)
 │   ├── tools/
 │   │   ├── webSearchTool.ts              # Exa web search + agent-powered summarization
@@ -64,20 +64,24 @@ Tools access other agents via `context.mastra.getAgent("agentName")`, which is w
 ## How It Connects to the Frontend
 
 ```plaintext
-┌────────────────┐        HTTP (AI SDK data-stream protocol)        ┌───────────────┐
-│   Frontend     │ ──── POST /mastra/api/agents/:agentId/stream ──→ │    Mastra     │
-│  (React/Vite)  │ ←──── streaming text chunks (0:"...\n") ──────── │   (Node.js)   │
-└────────────────┘                                                  └───────────────┘
+┌────────────────┐   SSE (Convex HTTP action)   ┌───────────────┐   HTTP (Mastra client)   ┌───────────────┐
+│   Frontend     │ ── POST /api/research ──────→ │    Convex     │ ── agent.stream() ─────→ │    Mastra     │
+│  (React/Vite)  │ ←── SSE events ───────────── │   (Backend)   │ ←── data stream ──────── │   (Node.js)   │
+└────────────────┘                               └───────────────┘                          └───────────────┘
 ```
 
-- **Direct chats** use the user's OpenRouter API key and call the LLM from the browser (phase-1 behavior)
-- **Agent chats** (e.g., Deep Research) send messages to the Mastra server, which calls the LLM using the server operator's API keys
+All AI requests go through Convex:
 
-The frontend decides which path to take based on the chat's `agentId` field. See `src/config/agents.ts` for the agent registry and `src/messages/hooks/use-chat.ts` for the routing logic.
+- **Normal chats** hit `POST /api/chat` — Convex calls OpenRouter directly via the Vercel AI SDK
+- **Research chats** hit `POST /api/research` — Convex uses `@mastra/client-js` to call the Mastra server, which runs the research and report agents
 
-In development, the Vite dev server proxies `/mastra` requests to `http://localhost:4111` (configured in `vite.config.ts`), so the frontend avoids CORS issues by never calling the Mastra port directly.
+The frontend is agnostic to where AI responses come from. It always talks to Convex via SSE. The routing decision is made in `src/messages/hooks/use-chat.ts` based on the `useResearch` flag, and the backend files are `convex/http_chat.ts` (normal) and `convex/http_research.ts` (research).
+
+The Mastra server URL is configured as a Convex environment variable (`MASTRA_URL`), not a frontend variable. This keeps the Mastra endpoint invisible to the client.
 
 ## Getting Started (Local Development)
+
+> **You must use a local Convex deployment** (not a cloud deployment) when developing with Mastra. The Mastra dev server runs on `localhost:4111`, and Convex actions need to reach it via the `MASTRA_URL` environment variable. With a cloud Convex deployment, actions execute on Convex's remote servers and cannot reach services on your machine — requests to `http://localhost:4111` will fail with "forbidden". With a local deployment (`npx convex dev --local`), the Convex backend runs on your machine and can reach the Mastra server. See the [Convex guide](./convex.md#cloud-vs-local-development) for details on switching between modes.
 
 ### Step 1 — Install dependencies
 
@@ -88,7 +92,7 @@ pnpm install
 cd mastra && pnpm install && cd ..
 ```
 
-### Step 2 — Set up environment variables
+### Step 2 — Set up Mastra environment variables
 
 Copy the example file and fill in your keys:
 
@@ -108,29 +112,37 @@ EXA_API_KEY=...                  # Used by the web search tool
 - **OpenRouter key** — Get one at [openrouter.ai/keys](https://openrouter.ai/keys)
 - **Exa key** — Get one at [dashboard.exa.ai](https://dashboard.exa.ai/api-keys) (free tier available)
 
-### Step 3 — Start both servers
+### Step 3 — Set the Convex environment variable
 
-In one terminal, start the frontend:
+Tell Convex where the Mastra server is running:
+
+```bash
+npx convex env set MASTRA_URL http://localhost:4111
+```
+
+### Step 4 — Start all three servers
 
 ```bash
 pnpm run dev
 ```
 
-In another terminal, start Mastra:
+This uses `concurrently` to start the Convex backend, Vite frontend, and Mastra dev server in one terminal. You can also run them separately:
 
 ```bash
-pnpm run dev:mastra
+pnpm run dev:backend    # Convex dev server
+pnpm run dev:frontend   # Vite dev server
+pnpm run dev:mastra     # Mastra dev server (port 4111)
 ```
 
 Mastra starts on port 4111 and opens the Studio UI at `http://localhost:4111`. The Studio lets you test agents interactively without the frontend.
 
-### Step 4 — Try it out
+### Step 5 — Try it out
 
 1. Open the app in your browser
 2. Click the **Research** button in the sidebar to create a research chat
 3. Ask a question — the agent will search the web and synthesize an answer
 
-No separate OpenRouter API key is needed in the frontend for agent chats. The agent uses the server's key.
+No separate API key is needed in the frontend for research chats. The Mastra server uses the server operator's keys, and communication happens through Convex.
 
 ## Adding a New Agent
 
@@ -176,6 +188,8 @@ export const mastra = new Mastra({
 },
 ```
 
+5. If the new agent needs its own Convex HTTP endpoint (e.g., a different streaming pattern), create a new Hono app in `convex/` following the `convex/http_research.ts` pattern and register it in `convex/http.ts` via `makeApiHandler()`.
+
 Restart the Mastra dev server and the new agent appears in the UI.
 
 ## Adding a New Tool
@@ -206,7 +220,7 @@ export const myTool = createTool({
 
 ## Deploying to Production
 
-In production the Mastra server runs separately from the static frontend. You have three options, from simplest to most control.
+In production the Mastra server runs separately from the static frontend and the Convex backend. The Convex backend connects to the Mastra server using the `MASTRA_URL` environment variable. You have three options for hosting Mastra, from simplest to most control.
 
 ### Option A — Mastra Cloud
 
@@ -216,7 +230,7 @@ Mastra Cloud is a managed hosting service that deploys directly from your GitHub
 2. Connect your repo and point it at the `mastra/` directory
 3. Set `OPENROUTER_API_KEY` and `EXA_API_KEY` as environment variables in the dashboard
 4. Deploy — Mastra Cloud gives you a URL like `https://your-project.mastra.cloud`
-5. Set the frontend's `VITE_MASTRA_ENDPOINT` environment variable to that URL (in Netlify or wherever you host the frontend)
+5. Set `MASTRA_URL` on your **Convex production deployment** to that URL (see the [Convex guide](./convex.md#going-to-production))
 
 ### Option B — Netlify Functions
 
@@ -231,6 +245,7 @@ If you already host the frontend on Netlify, you can colocate the Mastra backend
    Update `mastra/src/mastra/lib/storage.ts` with your Turso database URL and auth token
 4. Build: `cd mastra && npx mastra build`
 5. Deploy the output alongside your frontend
+6. Set `MASTRA_URL` on your Convex production deployment to the Netlify function URL
 
 Note: Netlify Functions have timeout constraints (10s free / 26s paid). Long-running agent tasks may need Mastra's workflow suspend/resume pattern.
 
@@ -241,23 +256,25 @@ For full control, build a standalone server and deploy it anywhere (Railway, Ren
 1. Build: `cd mastra && npx mastra build`
 2. The output is a plain Node.js HTTP server
 3. Deploy to your host of choice and set the environment variables
-4. Point `VITE_MASTRA_ENDPOINT` at your server URL
+4. Set `MASTRA_URL` on your Convex production deployment to your server URL
 
-### Frontend Configuration
+### Convex Configuration
 
-Regardless of which option you choose, set this environment variable when building the frontend:
+Regardless of which hosting option you choose, set the `MASTRA_URL` environment variable on your Convex deployment:
 
 ```bash
-VITE_MASTRA_ENDPOINT=https://your-mastra-server.example.com
+npx convex env set MASTRA_URL https://your-mastra-server.example.com
 ```
 
-Without this variable the frontend defaults to `/mastra`, which only works in local development (where Vite proxies it to port 4111).
+For local development, this is `http://localhost:4111`. For production, point it at your deployed Mastra server.
 
 ## Troubleshooting
 
-**"Could not reach the Mastra server"** — Make sure the Mastra dev server is running (`pnpm run dev:mastra`). Check that port 4111 is not blocked.
+**"Could not reach the Mastra server"** — Make sure the Mastra dev server is running (`pnpm run dev:mastra`). Check that port 4111 is not blocked. Verify the Convex `MASTRA_URL` environment variable is set correctly (`npx convex env get MASTRA_URL`).
 
-**"Network error" on agent chats but direct chats work** — The Vite proxy may not be forwarding correctly. Verify `vite.config.ts` has the `/mastra` proxy entry and that you are accessing the app through the Vite dev server (not a direct file open).
+**"Research streaming failed: forbidden"** — This means Convex actions cannot reach the Mastra server. The most common cause is using a cloud Convex deployment instead of a local one. Cloud actions run on Convex's remote servers and cannot access `localhost` on your machine. Switch to a local deployment: delete `.env.local` and run `npx convex dev --local` (see [Getting Started](#getting-started-local-development) above).
+
+**"MASTRA_URL not configured"** — The Convex backend cannot find the Mastra server URL. Run `npx convex env set MASTRA_URL http://localhost:4111` to set it.
 
 **Agent responds but has no web search results** — Check that `EXA_API_KEY` is set in `mastra/.env`. The Exa tools fail silently if the key is missing.
 

@@ -17,6 +17,8 @@ import type * as chats_queries from "../chats_queries.js";
 import type * as chats_schema from "../chats_schema.js";
 import type * as http from "../http.js";
 import type * as http_chat from "../http_chat.js";
+import type * as http_helpers from "../http_helpers.js";
+import type * as http_research from "../http_research.js";
 import type * as lib from "../lib.js";
 import type * as messages_guards from "../messages_guards.js";
 import type * as messages_helpers from "../messages_helpers.js";
@@ -42,6 +44,8 @@ declare const fullApi: ApiFromModules<{
   chats_schema: typeof chats_schema;
   http: typeof http;
   http_chat: typeof http_chat;
+  http_helpers: typeof http_helpers;
+  http_research: typeof http_research;
   lib: typeof lib;
   messages_guards: typeof messages_guards;
   messages_helpers: typeof messages_helpers;

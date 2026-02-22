@@ -7,7 +7,6 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { useAuthToken } from "@/hooks/use-auth-token";
 import { streamChatSSE } from "@/lib/sse";
 import { CONVEX_SITE_URL } from "@/lib/convex";
-import { streamMastraChat, getMastraEndpoint } from "@/lib/ai";
 import type { ToolCallPart } from "@/messages/types/tool-call";
 import type { ResearchPhase, ToolEvent } from "@/messages/types/research";
 import {
@@ -175,95 +174,68 @@ export function useChat(chatId: string) {
       abortControllerRef.current = abortController;
 
       if (useResearch) {
-        // Research path: two-phase Mastra flow (research agent → report agent)
-        // Currently calls Mastra directly from the frontend.
-        // TODO: Refactor to route through Convex HTTP endpoint (step 2).
+        // Research path: two-phase Mastra flow routed through Convex HTTP
         setResearchPhase("researching");
         setToolEvents([]);
 
-        const persistedMessages =
-          chatMessages$[chatId]?.persisted?.peek() ?? [];
-        const history = persistedMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
-
-        void streamMastraChat({
-          endpoint: getMastraEndpoint(),
-          agentId: "research-agent",
-          messages: history,
-          abortSignal: abortController.signal,
-          onToolCall: (event) => {
+        streamChatSSE({
+          siteUrl: CONVEX_SITE_URL,
+          token,
+          chatId,
+          model,
+          path: "/api/research",
+          userMessage: content,
+          signal: abortController.signal,
+          onMessageCreated: (data) => {
+            if (requestIdRef.current !== requestId) return;
+            setStreamingMessageId(chatId, data.messageId);
+          },
+          onResearchPhase: (data) => {
+            if (requestIdRef.current !== requestId) return;
+            setResearchPhase(data.phase);
+          },
+          onToolCall: ({ toolCallId, toolName, args }) => {
             if (requestIdRef.current !== requestId) return;
             setToolEvents((prev) => [
               ...prev,
               {
-                id: event.toolCallId,
-                toolName: event.toolName,
+                id: toolCallId,
+                toolName,
                 status: "running",
-                args: event.args,
+                args,
                 timestamp: Date.now(),
               },
             ]);
           },
-          onToolResult: (event) => {
+          onToolResult: ({ toolCallId, result, isError }) => {
             if (requestIdRef.current !== requestId) return;
             setToolEvents((prev) =>
               prev.map((te) =>
-                te.id === event.toolCallId
-                  ? {
-                      ...te,
-                      status: event.isError ? "error" : "completed",
-                      result: event.result,
-                    }
+                te.id === toolCallId
+                  ? { ...te, status: isError ? "error" : "completed", result }
                   : te,
               ),
             );
           },
-          // Research text is accumulated silently — not shown to the user
-          onChunk: undefined,
-          onFinish: (researchText) => {
+          onChunk: (accumulated) => {
             if (requestIdRef.current !== requestId) return;
+            appendStreamingContent(chatId, accumulated);
+          },
+          onDone: () => {
+            if (requestIdRef.current !== requestId) return;
+            abortControllerRef.current = null;
+            setResearchPhase("idle");
+            setToolEvents([]);
 
-            // Phase 2: call report agent to produce a clean markdown report
-            setResearchPhase("reporting");
-
-            const reportPrompt = `Based on the following research data, write a comprehensive report answering: ${content}\n\nResearch Data:\n${researchText}`;
-
-            void streamMastraChat({
-              endpoint: getMastraEndpoint(),
-              agentId: "report-agent",
-              messages: [{ role: "user", content: reportPrompt }],
-              abortSignal: abortController.signal,
-              onChunk: (accumulated) => {
+            const { messageId } = getStreamingState(chatId);
+            if (messageId) {
+              void waitForPersistedMessage(chatId, messageId).then(() => {
                 if (requestIdRef.current !== requestId) return;
-                appendStreamingContent(chatId, accumulated);
-              },
-              onFinish: (fullText) => {
-                if (requestIdRef.current !== requestId) return;
-                // Persist assistant message via Convex
-                void createMessage({
-                  chatId: chatId as Id<"chats">,
-                  role: "assistant",
-                  content: fullText,
-                }).catch(() => {
-                  // Silently fail — message is already visible via streaming
-                });
-                setResearchPhase("idle");
-                setToolEvents([]);
-                abortControllerRef.current = null;
                 clearStreaming(chatId);
-              },
-              onError: (err) => {
-                if (requestIdRef.current !== requestId) return;
-                abortControllerRef.current = null;
-                setResearchPhase("idle");
-                setToolEvents([]);
-                clearStreaming(chatId);
-                console.error("[useChat] research reporting failed:", err);
-                toast.error(friendlyErrorMessage(err), { duration: 8000 });
-              },
-            });
+              });
+            } else {
+              clearStreaming(chatId);
+            }
           },
           onError: (err) => {
             if (requestIdRef.current !== requestId) return;
@@ -274,6 +246,14 @@ export function useChat(chatId: string) {
             console.error("[useChat] research streaming failed:", err);
             toast.error(friendlyErrorMessage(err), { duration: 8000 });
           },
+        }).catch((err: unknown) => {
+          clearStreaming(chatId);
+          setResearchPhase("idle");
+          setToolEvents([]);
+          console.error("[useChat] unexpected research error:", err);
+          toast.error("Something went wrong. Please try again.", {
+            duration: 8000,
+          });
         });
       } else {
         // Normal chat path: Convex SSE streaming (phase-2 architecture)

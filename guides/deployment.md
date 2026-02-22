@@ -35,6 +35,8 @@ This project deploys to [Netlify](https://www.netlify.com/) via GitHub Actions. 
 | `NETLIFY_SITE_ID`    | The site ID from Step 1                                                      |
 | `CONVEX_DEPLOY_KEY`  | Your Convex deploy key (see [Convex guide](./convex.md#going-to-production)) |
 
+Also make sure your Convex **production** deployment has the `MASTRA_URL` environment variable set to your deployed Mastra server URL (see [Convex guide](./convex.md#2-set-production-environment-variables)). Without it, research chats will fail with a "MASTRA_URL not configured" error.
+
 ## Step 4 — Deploy
 
 Push or merge to `master`. The CD workflow will:

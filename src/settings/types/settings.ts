@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const settingsSchema = z.object({
   displayName: z.string(),
-  mastraEndpoint: z.string().optional(),
 });
 
 export const updateSettingsSchema = settingsSchema.partial();

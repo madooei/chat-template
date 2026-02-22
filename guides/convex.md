@@ -46,6 +46,8 @@ Similarly, `npx convex dashboard` opens the appropriate dashboard based on `.env
 
 **Switching between modes:** Delete `.env.local` and run `npx convex dev` again. You'll be prompted to create a new project or choose an existing one (including any you've created before, local or cloud).
 
+> **Important: Local deployment is required for Mastra integration.** The Mastra dev server runs on `localhost:4111`. With a cloud Convex deployment, actions execute on Convex's remote servers and cannot reach `localhost` on your machine — requests to `http://localhost:4111` will fail with "forbidden". With a local deployment, the Convex backend runs on your machine alongside Mastra, so actions can reach it. If you don't need Mastra (i.e., you only use normal chat, not deep research), either deployment mode works fine.
+
 ## First-Time Dev Setup
 
 ### 1. Install Dependencies
@@ -110,6 +112,13 @@ npx convex env set OPENROUTER_API_KEY your-openrouter-api-key
 | `JWKS`               | The public key JSON from Step 3                          |
 | `OPENROUTER_API_KEY` | Your OpenRouter API key (for server-side AI calls)       |
 | `SITE_URL`           | `http://localhost:5173` (required by `@convex-dev/auth`) |
+| `MASTRA_URL`         | `http://localhost:4111` (Mastra server for research)     |
+
+You can set `MASTRA_URL` via the CLI instead of the dashboard:
+
+```bash
+npx convex env set MASTRA_URL http://localhost:4111
+```
 
 You can verify all variables are set with `npx convex env list`.
 
@@ -155,7 +164,9 @@ convex/
 ├── auth.ts                # Anonymous auth config
 ├── auth.config.ts         # Auth provider configuration
 ├── http.ts                # HTTP router (CORS, auth middleware)
-├── http_chat.ts           # SSE streaming endpoint
+├── http_helpers.ts        # Shared helpers (auto-title)
+├── http_chat.ts           # SSE streaming endpoint (normal chat)
+├── http_research.ts       # SSE streaming endpoint (research via Mastra)
 │
 ├── chats_schema.ts        # Table definition + validators
 ├── chats_guards.ts        # Ownership checks (throws 403/404)
@@ -198,6 +209,7 @@ On the Convex dashboard, switch to your **production** deployment and set:
 | `JWKS`               | Matching public key JSON                                 |
 | `OPENROUTER_API_KEY` | Your production OpenRouter API key                       |
 | `SITE_URL`           | Your production URL (e.g., `https://myapp.netlify.app`)  |
+| `MASTRA_URL`         | Your deployed Mastra server URL                          |
 
 ### 3. Get Your Deploy Key
 

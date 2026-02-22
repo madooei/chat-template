@@ -7,6 +7,7 @@ import { type Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
 import { getLocation, getCurrentWeather } from "./weather";
+import { autoTitleChat } from "./http_helpers";
 
 // Hono app typed with Convex action context + userId from auth middleware
 type Env = {
@@ -174,46 +175,15 @@ app.post("/api/chat", async (c) => {
       );
 
       // Auto-title if still "New Chat"
-      if (
-        ownership.ok &&
-        ownership.title === "New Chat" &&
-        fullText.length > 0
-      ) {
-        try {
-          const titleMessages = [
-            ...messages,
-            { role: "assistant" as const, content: fullText },
-          ];
-          const excerpt = titleMessages
-            .slice(0, 6)
-            .map((m) => `${m.role}: ${m.content}`)
-            .join("\n");
-
-          const titleResult = streamText({
-            model: openrouter.chat(model),
-            messages: [
-              {
-                role: "user",
-                content: `Generate a short title (3-6 words) for the following conversation. Return only the title, no quotes or punctuation.\n\n${excerpt}`,
-              },
-            ],
-          });
-
-          let title = "";
-          for await (const chunk of (await titleResult).textStream) {
-            title += chunk;
-          }
-          title = title.trim();
-
-          if (title) {
-            await ctx.runMutation(internal.messages_internals.updateChatTitle, {
-              chatId,
-              title,
-            });
-          }
-        } catch {
-          // Title generation is best-effort — don't fail the stream
-        }
+      if (ownership.ok) {
+        await autoTitleChat({
+          ctx,
+          chatId,
+          model,
+          currentTitle: ownership.title,
+          messages,
+          assistantContent: fullText,
+        });
       }
 
       await stream.writeSSE({ data: "[DONE]", event: "text-delta" });

@@ -8,10 +8,15 @@ interface ToolResultData {
   toolCallId: string;
   toolName: string;
   result: Record<string, unknown>;
+  isError?: boolean;
 }
 
 interface MessageCreatedData {
   messageId: string;
+}
+
+interface ResearchPhaseData {
+  phase: "researching" | "reporting";
 }
 
 interface StreamChatSSEOptions {
@@ -19,6 +24,8 @@ interface StreamChatSSEOptions {
   token: string;
   chatId: string;
   model: string;
+  path?: string;
+  userMessage?: string;
   signal?: AbortSignal;
   onChunk?: (accumulated: string) => void;
   onDone?: (fullText: string) => void;
@@ -26,6 +33,7 @@ interface StreamChatSSEOptions {
   onToolCall?: (data: ToolCallData) => void;
   onToolResult?: (data: ToolResultData) => void;
   onMessageCreated?: (data: MessageCreatedData) => void;
+  onResearchPhase?: (data: ResearchPhaseData) => void;
 }
 
 /**
@@ -36,6 +44,8 @@ export async function streamChatSSE({
   token,
   chatId,
   model,
+  path = "/api/chat",
+  userMessage,
   signal,
   onChunk,
   onDone,
@@ -43,15 +53,20 @@ export async function streamChatSSE({
   onToolCall,
   onToolResult,
   onMessageCreated,
+  onResearchPhase,
 }: StreamChatSSEOptions): Promise<void> {
   try {
-    const response = await fetch(`${siteUrl}/api/chat`, {
+    const response = await fetch(`${siteUrl}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ chatId, model }),
+      body: JSON.stringify({
+        chatId,
+        model,
+        ...(userMessage !== undefined && { userMessage }),
+      }),
       signal,
     });
 
@@ -119,6 +134,9 @@ export async function streamChatSSE({
                 break;
               case "message-created":
                 onMessageCreated?.(JSON.parse(eventData) as MessageCreatedData);
+                break;
+              case "research-phase":
+                onResearchPhase?.(JSON.parse(eventData) as ResearchPhaseData);
                 break;
             }
 
