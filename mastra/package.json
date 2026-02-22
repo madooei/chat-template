@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "mastra dev"
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start"
   },
   "dependencies": {
     "@mastra/core": "^1.4.0",
