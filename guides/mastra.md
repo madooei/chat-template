@@ -64,10 +64,10 @@ Tools access other agents via `context.mastra.getAgent("agentName")`, which is w
 ## How It Connects to the Frontend
 
 ```plaintext
-┌────────────────┐   SSE (Convex HTTP action)   ┌───────────────┐   HTTP (Mastra client)   ┌───────────────┐
-│   Frontend     │ ── POST /api/chat ──────────→ │    Convex     │ ── agent.stream() ─────→ │    Mastra     │
-│  (React/Vite)  │ ←── SSE events ───────────── │   (Backend)   │ ←── data stream ──────── │   (Node.js)   │
-└────────────────┘                               └───────────────┘                          └───────────────┘
+┌────────────────┐   SSE (Convex HTTP action)     ┌───────────────┐   HTTP (Mastra client)   ┌───────────────┐
+│   Frontend     │ ── POST /api/chat ───────────→ │    Convex     │ ── agent.stream() ─────→ │    Mastra     │
+│  (React/Vite)  │ ←── SSE events ─────────────── │   (Backend)   │ ←── data stream ──────── │   (Node.js)   │
+└────────────────┘                                └───────────────┘                          └───────────────┘
 ```
 
 All AI requests go through a single endpoint: `POST /api/chat`. The LLM decides whether to invoke the `deepResearch` tool based on the user's message:
