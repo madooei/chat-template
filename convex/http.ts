@@ -6,7 +6,6 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import chatApp from "./http_chat";
-import researchApp from "./http_research";
 
 type HonoEnv = {
   Bindings: {
@@ -66,7 +65,6 @@ function makeApiHandler(app: Hono<HonoEnv>, path: string) {
 // ── API endpoints ───────────────────────────────────────────────
 
 makeApiHandler(chatApp, "/api/chat");
-makeApiHandler(researchApp, "/api/research");
 
 // ── CORS helpers ────────────────────────────────────────────────
 

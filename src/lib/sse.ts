@@ -16,7 +16,7 @@ interface MessageCreatedData {
 }
 
 interface ResearchPhaseData {
-  phase: "researching" | "reporting";
+  phase: "researching" | "reporting" | "idle";
 }
 
 interface StreamChatSSEOptions {
@@ -24,8 +24,6 @@ interface StreamChatSSEOptions {
   token: string;
   chatId: string;
   model: string;
-  path?: string;
-  userMessage?: string;
   signal?: AbortSignal;
   onChunk?: (accumulated: string) => void;
   onDone?: (fullText: string) => void;
@@ -44,8 +42,6 @@ export async function streamChatSSE({
   token,
   chatId,
   model,
-  path = "/api/chat",
-  userMessage,
   signal,
   onChunk,
   onDone,
@@ -56,17 +52,13 @@ export async function streamChatSSE({
   onResearchPhase,
 }: StreamChatSSEOptions): Promise<void> {
   try {
-    const response = await fetch(`${siteUrl}${path}`, {
+    const response = await fetch(`${siteUrl}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        chatId,
-        model,
-        ...(userMessage !== undefined && { userMessage }),
-      }),
+      body: JSON.stringify({ chatId, model }),
       signal,
     });
 

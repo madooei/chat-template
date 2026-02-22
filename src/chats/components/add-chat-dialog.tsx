@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useMutationChats } from "@/chats/hooks/use-mutation-chats";
-import { AVAILABLE_AGENTS, DEFAULT_AGENT } from "@/config/agents";
 
 interface AddChatDialogProps {
   open: boolean;
@@ -22,7 +21,6 @@ const AddChatDialog: React.FC<AddChatDialogProps> = ({
   onOpenChange,
 }) => {
   const [title, setTitle] = useState("");
-  const [agentId, setAgentId] = useState(DEFAULT_AGENT);
   const [, setLocation] = useLocation();
   const { add: createChat } = useMutationChats();
 
@@ -30,13 +28,9 @@ const AddChatDialog: React.FC<AddChatDialogProps> = ({
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
-    const chatId = await createChat({
-      title: trimmed,
-      agentId: agentId === DEFAULT_AGENT ? undefined : agentId,
-    });
+    const chatId = await createChat({ title: trimmed });
     if (chatId) {
       setTitle("");
-      setAgentId(DEFAULT_AGENT);
       onOpenChange(false);
       setLocation(`/chats/${chatId}/messages`);
     }
@@ -55,28 +49,6 @@ const AddChatDialog: React.FC<AddChatDialogProps> = ({
             placeholder="Chat title"
             autoFocus
           />
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Chat Type</label>
-            <div className="flex gap-2">
-              {AVAILABLE_AGENTS.map((agent) => (
-                <button
-                  key={agent.id}
-                  type="button"
-                  onClick={() => setAgentId(agent.id)}
-                  className={`flex-1 rounded-md border px-3 py-2 text-sm transition-colors ${
-                    agentId === agent.id
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border hover:bg-accent"
-                  }`}
-                >
-                  <div className="font-medium">{agent.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {agent.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
           <DialogFooter>
             <Button
               type="button"

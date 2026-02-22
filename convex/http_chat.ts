@@ -3,6 +3,7 @@ import { streamSSE } from "hono/streaming";
 import { streamText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { MastraClient } from "@mastra/client-js";
 import { type Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
@@ -99,14 +100,148 @@ app.post("/api/chat", async (c) => {
         event: "message-created",
       });
 
-      console.log("[chat] tools enabled:", Object.keys(weatherTools));
+      // Deep research tool — runs the full Mastra pipeline and writes SSE
+      // events directly to the Hono stream via closure.
+      const deepResearch = tool({
+        description:
+          "Perform deep web research on a complex question that requires searching multiple sources, synthesizing information, and producing a comprehensive report. " +
+          "Only call this tool for questions that genuinely need multi-source research — for example, comparing technologies, investigating recent events, or analyzing trends. " +
+          "Do NOT call this for greetings, simple factual questions, math, coding help, or anything you can answer from your training data.",
+        inputSchema: z.object({
+          query: z
+            .string()
+            .describe("The research question to investigate thoroughly"),
+        }),
+        execute: async ({ query }) => {
+          const mastraUrl = process.env.MASTRA_URL;
+          if (!mastraUrl) {
+            throw new Error(
+              "MASTRA_URL not configured — cannot perform deep research",
+            );
+          }
+
+          // Phase 1: Research agent
+          await stream.writeSSE({
+            data: JSON.stringify({ phase: "researching" }),
+            event: "research-phase",
+          });
+
+          const client = new MastraClient({ baseUrl: mastraUrl });
+          const researchAgent = client.getAgent("research-agent");
+
+          const researchResponse = await researchAgent.stream(
+            messages as unknown as Parameters<typeof researchAgent.stream>[0],
+          );
+
+          let researchText = "";
+          await researchResponse.processDataStream({
+            onChunk: async (chunk) => {
+              if (chunk.type === "text-delta") {
+                researchText += (chunk.payload as { text: string }).text;
+              } else if (chunk.type === "tool-call") {
+                const payload = chunk.payload as {
+                  toolCallId: string;
+                  toolName: string;
+                  args: unknown;
+                };
+                await stream.writeSSE({
+                  data: JSON.stringify({
+                    toolCallId: payload.toolCallId,
+                    toolName: payload.toolName,
+                    args: payload.args,
+                  }),
+                  event: "tool-call",
+                });
+              } else if (chunk.type === "tool-result") {
+                const payload = chunk.payload as {
+                  toolCallId: string;
+                  toolName: string;
+                  result: unknown;
+                  isError?: boolean;
+                };
+                await stream.writeSSE({
+                  data: JSON.stringify({
+                    toolCallId: payload.toolCallId,
+                    toolName: payload.toolName,
+                    result: payload.result,
+                    ...(payload.isError && { isError: true }),
+                  }),
+                  event: "tool-result",
+                });
+              }
+            },
+          });
+
+          // Phase 2: Report agent
+          await stream.writeSSE({
+            data: JSON.stringify({ phase: "reporting" }),
+            event: "research-phase",
+          });
+
+          const reportPrompt =
+            `Based on the following research data, write a comprehensive report answering: ${query}\n\n` +
+            `Research Data:\n${researchText}`;
+
+          const reportAgent = client.getAgent("report-agent");
+          const reportResponse = await reportAgent.stream([
+            { role: "user", content: reportPrompt },
+          ] as unknown as Parameters<typeof reportAgent.stream>[0]);
+
+          let unflushedLength = 0;
+          let lastFlushTime = Date.now();
+
+          await reportResponse.processDataStream({
+            onChunk: async (chunk) => {
+              if (chunk.type === "text-delta") {
+                const text = (chunk.payload as { text: string }).text;
+                fullText += text;
+                unflushedLength += text.length;
+
+                await stream.writeSSE({
+                  data: text,
+                  event: "text-delta",
+                });
+
+                // Periodic DB flush
+                if (
+                  messageId &&
+                  unflushedLength >= MIN_FLUSH_SIZE &&
+                  Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS
+                ) {
+                  await ctx.runMutation(
+                    internal.messages_internals.updateStreamingContent,
+                    { messageId, content: fullText },
+                  );
+                  unflushedLength = 0;
+                  lastFlushTime = Date.now();
+                }
+              }
+            },
+          });
+
+          // Signal research complete
+          await stream.writeSSE({
+            data: JSON.stringify({ phase: "idle" }),
+            event: "research-phase",
+          });
+
+          return { completed: true };
+        },
+      });
+
+      const tools = { ...weatherTools, deepResearch };
+
+      console.log("[chat] tools enabled:", Object.keys(tools));
       const result = streamText({
         model: openrouter.chat(model),
         messages,
-        tools: weatherTools,
+        tools,
         stopWhen: stepCountIs(5),
         system:
-          "You are a helpful, general-purpose assistant. You have access to weather tools — if the user asks about weather, call getLocation first to get coordinates, then use getCurrentWeather with those coordinates.",
+          "You are a helpful, general-purpose assistant. " +
+          "You have access to weather tools — if the user asks about weather, call getLocation first to get coordinates, then use getCurrentWeather with those coordinates. " +
+          "You also have a deepResearch tool for complex questions that require searching multiple web sources and synthesizing a comprehensive report. " +
+          "Only use deepResearch for questions that genuinely need multi-source web research. Do not use it for greetings, simple questions, coding help, or anything you can answer directly.",
         onStepFinish: ({ text, toolCalls, toolResults, finishReason }) => {
           console.log("[chat] step finished:", {
             finishReason,
@@ -123,6 +258,16 @@ app.post("/api/chat", async (c) => {
 
       for await (const part of (await result).fullStream) {
         console.log("[chat] stream part:", part.type);
+
+        // Suppress deepResearch tool events — the execute function already
+        // wrote SSE events directly to the stream.
+        if (
+          (part.type === "tool-call" || part.type === "tool-result") &&
+          part.toolName === "deepResearch"
+        ) {
+          continue;
+        }
+
         switch (part.type) {
           case "text-delta":
             fullText += part.text;

@@ -40,13 +40,12 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   } = useChat(chatId);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [inputValue, setInputValue] = useState("");
-  const [researchEnabled, setResearchEnabled] = useState(false);
   const [, setLocation] = useLocation();
 
   const activeModel = AVAILABLE_MODELS.find((m) => m.id === model);
 
   const handleSend = async (content: string) => {
-    const accepted = await sendMessage(content, model, researchEnabled);
+    const accepted = await sendMessage(content, model);
     if (accepted) {
       setInputValue("");
     }
@@ -135,8 +134,6 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
         onSend={handleSend}
         isLoading={isStreaming}
         onAbort={abort}
-        researchEnabled={researchEnabled}
-        onResearchToggle={() => setResearchEnabled((prev) => !prev)}
       />
     </div>
   );

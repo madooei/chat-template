@@ -89,6 +89,7 @@ export function useChat(chatId: string) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
   const toolCallsRef = useRef<Map<string, ToolCallPart>>(new Map());
+  const researchPhaseRef = useRef<ResearchPhase>("idle");
   const token = useAuthToken();
   const createMessage = useMutation(api.messages_mutations.create);
 
@@ -117,11 +118,7 @@ export function useChat(chatId: string) {
   }, []);
 
   const sendMessage = useCallback(
-    async (
-      content: string,
-      model: string,
-      useResearch = false,
-    ): Promise<boolean> => {
+    async (content: string, model: string): Promise<boolean> => {
       if (!token) {
         toast.error("Not authenticated", {
           description: "Please refresh the page to sign in.",
@@ -166,6 +163,7 @@ export function useChat(chatId: string) {
       // Set up streaming state
       startStreaming(chatId);
       toolCallsRef.current = new Map();
+      researchPhaseRef.current = "idle";
 
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
@@ -173,29 +171,33 @@ export function useChat(chatId: string) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      if (useResearch) {
-        // Research path: two-phase Mastra flow routed through Convex HTTP
-        setResearchPhase("researching");
-        setToolEvents([]);
+      streamChatSSE({
+        siteUrl: CONVEX_SITE_URL,
+        token,
+        chatId,
+        model,
+        signal: abortController.signal,
+        onMessageCreated: (data) => {
+          if (requestIdRef.current !== requestId) return;
+          setStreamingMessageId(chatId, data.messageId);
+        },
+        onResearchPhase: (data) => {
+          if (requestIdRef.current !== requestId) return;
+          researchPhaseRef.current = data.phase;
+          setResearchPhase(data.phase);
+        },
+        onChunk: (accumulated) => {
+          if (requestIdRef.current !== requestId) return;
+          appendStreamingContent(chatId, accumulated);
+        },
+        onToolCall: ({ toolCallId, toolName, args }) => {
+          if (requestIdRef.current !== requestId) return;
 
-        streamChatSSE({
-          siteUrl: CONVEX_SITE_URL,
-          token,
-          chatId,
-          model,
-          path: "/api/research",
-          userMessage: content,
-          signal: abortController.signal,
-          onMessageCreated: (data) => {
-            if (requestIdRef.current !== requestId) return;
-            setStreamingMessageId(chatId, data.messageId);
-          },
-          onResearchPhase: (data) => {
-            if (requestIdRef.current !== requestId) return;
-            setResearchPhase(data.phase);
-          },
-          onToolCall: ({ toolCallId, toolName, args }) => {
-            if (requestIdRef.current !== requestId) return;
+          // Skip deepResearch tool events (handled by backend)
+          if (toolName === "deepResearch") return;
+
+          if (researchPhaseRef.current === "researching") {
+            // During research phase, route to research progress UI
             setToolEvents((prev) => [
               ...prev,
               {
@@ -206,73 +208,8 @@ export function useChat(chatId: string) {
                 timestamp: Date.now(),
               },
             ]);
-          },
-          onToolResult: ({ toolCallId, result, isError }) => {
-            if (requestIdRef.current !== requestId) return;
-            setToolEvents((prev) =>
-              prev.map((te) =>
-                te.id === toolCallId
-                  ? { ...te, status: isError ? "error" : "completed", result }
-                  : te,
-              ),
-            );
-          },
-          onChunk: (accumulated) => {
-            if (requestIdRef.current !== requestId) return;
-            appendStreamingContent(chatId, accumulated);
-          },
-          onDone: () => {
-            if (requestIdRef.current !== requestId) return;
-            abortControllerRef.current = null;
-            setResearchPhase("idle");
-            setToolEvents([]);
-
-            const { messageId } = getStreamingState(chatId);
-            if (messageId) {
-              void waitForPersistedMessage(chatId, messageId).then(() => {
-                if (requestIdRef.current !== requestId) return;
-                clearStreaming(chatId);
-              });
-            } else {
-              clearStreaming(chatId);
-            }
-          },
-          onError: (err) => {
-            if (requestIdRef.current !== requestId) return;
-            abortControllerRef.current = null;
-            setResearchPhase("idle");
-            setToolEvents([]);
-            clearStreaming(chatId);
-            console.error("[useChat] research streaming failed:", err);
-            toast.error(friendlyErrorMessage(err), { duration: 8000 });
-          },
-        }).catch((err: unknown) => {
-          clearStreaming(chatId);
-          setResearchPhase("idle");
-          setToolEvents([]);
-          console.error("[useChat] unexpected research error:", err);
-          toast.error("Something went wrong. Please try again.", {
-            duration: 8000,
-          });
-        });
-      } else {
-        // Normal chat path: Convex SSE streaming (phase-2 architecture)
-        streamChatSSE({
-          siteUrl: CONVEX_SITE_URL,
-          token,
-          chatId,
-          model,
-          signal: abortController.signal,
-          onMessageCreated: (data) => {
-            if (requestIdRef.current !== requestId) return;
-            setStreamingMessageId(chatId, data.messageId);
-          },
-          onChunk: (accumulated) => {
-            if (requestIdRef.current !== requestId) return;
-            appendStreamingContent(chatId, accumulated);
-          },
-          onToolCall: ({ toolCallId, toolName, args }) => {
-            if (requestIdRef.current !== requestId) return;
+          } else {
+            // Normal tool call UI
             const part: ToolCallPart = {
               toolCallId,
               toolName,
@@ -284,9 +221,25 @@ export function useChat(chatId: string) {
               chatId,
               Array.from(toolCallsRef.current.values()),
             );
-          },
-          onToolResult: ({ toolCallId, toolName, result }) => {
-            if (requestIdRef.current !== requestId) return;
+          }
+        },
+        onToolResult: ({ toolCallId, toolName, result, isError }) => {
+          if (requestIdRef.current !== requestId) return;
+
+          // Skip deepResearch tool events (handled by backend)
+          if (toolName === "deepResearch") return;
+
+          if (researchPhaseRef.current === "researching") {
+            // During research phase, route to research progress UI
+            setToolEvents((prev) =>
+              prev.map((te) =>
+                te.id === toolCallId
+                  ? { ...te, status: isError ? "error" : "completed", result }
+                  : te,
+              ),
+            );
+          } else {
+            // Normal tool result UI
             const existing = toolCallsRef.current.get(toolCallId);
             const part: ToolCallPart = {
               toolCallId,
@@ -300,38 +253,46 @@ export function useChat(chatId: string) {
               chatId,
               Array.from(toolCallsRef.current.values()),
             );
-          },
-          onDone: () => {
-            if (requestIdRef.current !== requestId) return;
-            abortControllerRef.current = null;
-            toolCallsRef.current = new Map();
+          }
+        },
+        onDone: () => {
+          if (requestIdRef.current !== requestId) return;
+          abortControllerRef.current = null;
+          toolCallsRef.current = new Map();
+          researchPhaseRef.current = "idle";
+          setResearchPhase("idle");
+          setToolEvents([]);
 
-            // Wait for persisted message before clearing streaming state
-            const { messageId } = getStreamingState(chatId);
-            if (messageId) {
-              void waitForPersistedMessage(chatId, messageId).then(() => {
-                if (requestIdRef.current !== requestId) return;
-                clearStreaming(chatId);
-              });
-            } else {
+          // Wait for persisted message before clearing streaming state
+          const { messageId } = getStreamingState(chatId);
+          if (messageId) {
+            void waitForPersistedMessage(chatId, messageId).then(() => {
+              if (requestIdRef.current !== requestId) return;
               clearStreaming(chatId);
-            }
-          },
-          onError: (err) => {
-            if (requestIdRef.current !== requestId) return;
-            abortControllerRef.current = null;
-            toolCallsRef.current = new Map();
+            });
+          } else {
             clearStreaming(chatId);
-            console.error("[useChat] streaming failed:", err);
-            const friendly = friendlyErrorMessage(err);
-            toast.error(friendly, { duration: 8000 });
-          },
-        }).catch((err: unknown) => {
-          // Safety net: if onError itself throws, ensure streaming state is cleaned up.
+          }
+        },
+        onError: (err) => {
+          if (requestIdRef.current !== requestId) return;
+          abortControllerRef.current = null;
+          toolCallsRef.current = new Map();
+          researchPhaseRef.current = "idle";
+          setResearchPhase("idle");
+          setToolEvents([]);
           clearStreaming(chatId);
-          console.error("[useChat] unexpected streaming error:", err);
-        });
-      }
+          console.error("[useChat] streaming failed:", err);
+          toast.error(friendlyErrorMessage(err), { duration: 8000 });
+        },
+      }).catch((err: unknown) => {
+        // Safety net: if onError itself throws, ensure streaming state is cleaned up.
+        clearStreaming(chatId);
+        researchPhaseRef.current = "idle";
+        setResearchPhase("idle");
+        setToolEvents([]);
+        console.error("[useChat] unexpected streaming error:", err);
+      });
 
       return true;
     },
@@ -343,6 +304,7 @@ export function useChat(chatId: string) {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     toolCallsRef.current = new Map();
+    researchPhaseRef.current = "idle";
     setResearchPhase("idle");
     setToolEvents([]);
     clearStreaming(chatId);

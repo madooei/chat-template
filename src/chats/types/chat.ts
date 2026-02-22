@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const createChatSchema = z.object({
   title: z.string().min(1),
-  agentId: z.string().optional(),
 });
 
 export const updateChatSchema = createChatSchema.partial();

@@ -65,17 +65,17 @@ Tools access other agents via `context.mastra.getAgent("agentName")`, which is w
 
 ```plaintext
 ┌────────────────┐   SSE (Convex HTTP action)   ┌───────────────┐   HTTP (Mastra client)   ┌───────────────┐
-│   Frontend     │ ── POST /api/research ──────→ │    Convex     │ ── agent.stream() ─────→ │    Mastra     │
+│   Frontend     │ ── POST /api/chat ──────────→ │    Convex     │ ── agent.stream() ─────→ │    Mastra     │
 │  (React/Vite)  │ ←── SSE events ───────────── │   (Backend)   │ ←── data stream ──────── │   (Node.js)   │
 └────────────────┘                               └───────────────┘                          └───────────────┘
 ```
 
-All AI requests go through Convex:
+All AI requests go through a single endpoint: `POST /api/chat`. The LLM decides whether to invoke the `deepResearch` tool based on the user's message:
 
-- **Normal chats** hit `POST /api/chat` — Convex calls OpenRouter directly via the Vercel AI SDK
-- **Research chats** hit `POST /api/research` — Convex uses `@mastra/client-js` to call the Mastra server, which runs the research and report agents
+- **Simple messages** (greetings, factual questions, coding help) — the LLM responds directly via OpenRouter
+- **Research-worthy questions** (complex, multi-source topics) — the LLM calls the `deepResearch` tool, which runs the Mastra research-agent and report-agent pipeline server-side
 
-The frontend is agnostic to where AI responses come from. It always talks to Convex via SSE. The routing decision is made in `src/messages/hooks/use-chat.ts` based on the `useResearch` flag, and the backend files are `convex/http_chat.ts` (normal) and `convex/http_research.ts` (research).
+The `deepResearch` tool is defined in `convex/http_chat.ts` alongside the weather tools. Its `execute()` function writes SSE events (research phases, tool calls, text deltas) directly to the Hono stream via closure, so the frontend sees the same research progress UI without any special routing. The frontend always uses a single code path in `src/messages/hooks/use-chat.ts` — it routes incoming tool events to either the research progress UI or the normal tool UI based on the current research phase.
 
 The Mastra server URL is configured as a Convex environment variable (`MASTRA_URL`), not a frontend variable. This keeps the Mastra endpoint invisible to the client.
 
@@ -139,10 +139,10 @@ Mastra starts on port 4111 and opens the Studio UI at `http://localhost:4111`. T
 ### Step 5 — Try it out
 
 1. Open the app in your browser
-2. Click the **Research** button in the sidebar to create a research chat
-3. Ask a question — the agent will search the web and synthesize an answer
+2. Create a new chat and ask a complex research question (e.g., "What are the latest developments in quantum computing?")
+3. The LLM will automatically invoke the deep research tool, search the web, and synthesize a comprehensive report
 
-No separate API key is needed in the frontend for research chats. The Mastra server uses the server operator's keys, and communication happens through Convex.
+No separate API key is needed in the frontend for research. The Mastra server uses the server operator's keys, and communication happens through Convex.
 
 ## Adding a New Agent
 
@@ -176,19 +176,7 @@ export const mastra = new Mastra({
 });
 ```
 
-4. Add a frontend entry in `src/config/agents.ts`:
-
-```typescript
-{
-  id: "my-agent",
-  label: "My Agent",
-  type: "mastra",
-  description: "A helpful assistant that...",
-  mastraAgentId: "myAgent",   // Must match the key in mastra/src/mastra/index.ts
-},
-```
-
-5. If the new agent needs its own Convex HTTP endpoint (e.g., a different streaming pattern), create a new Hono app in `convex/` following the `convex/http_research.ts` pattern and register it in `convex/http.ts` via `makeApiHandler()`.
+4. To expose the agent to the chat, add a new tool in `convex/http_chat.ts` (following the `deepResearch` tool pattern) that calls the agent via `MastraClient`.
 
 Restart the Mastra dev server and the new agent appears in the UI.
 

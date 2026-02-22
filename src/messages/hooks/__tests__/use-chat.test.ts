@@ -81,7 +81,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL, false);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     // Optimistic message should be added before mutation
@@ -154,7 +154,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     act(() => {
-      void result.current.sendMessage("Hello", DEFAULT_MODEL, false);
+      void result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     await act(async () => {
@@ -179,7 +179,7 @@ describe("useChat", () => {
     const { result } = renderHook(() => useChat("chat-1"));
 
     await act(async () => {
-      await result.current.sendMessage("Hello", DEFAULT_MODEL, false);
+      await result.current.sendMessage("Hello", DEFAULT_MODEL);
     });
 
     // Wait for the rejected promise to propagate
