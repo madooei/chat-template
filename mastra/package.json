@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "mastra dev",
+    "lint": "mastra lint",
     "build": "mastra build",
     "start": "mastra start"
   },
