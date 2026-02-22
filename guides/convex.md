@@ -15,7 +15,36 @@ The key pieces:
 - **HTTP actions** (`convex/http.ts`) — traditional HTTP endpoints (we use these for SSE streaming)
 - **Auth** (`convex/auth.ts`) — anonymous authentication via `@convex-dev/auth`
 
-All of these are TypeScript files in `convex/`. When you run `npx convex dev`, Convex watches this directory and hot-deploys changes to the cloud.
+All of these are TypeScript files in `convex/`. When you run `npx convex dev`, Convex watches this directory and hot-deploys changes automatically.
+
+## Cloud vs. Local Development
+
+Convex offers two modes for development:
+
+- **Cloud deployment** — your dev backend runs on Convex's servers. Data lives in the cloud, and you access the dashboard at [dashboard.convex.dev](https://dashboard.convex.dev/). Requires a Convex account.
+- **Local deployment** (BETA) — your dev backend runs entirely on your machine. Data lives in a `.convex/` folder in your project directory. No account needed, no network round-trips, faster iteration. You manage environment variables via the CLI (`npx convex env set`) instead of the web dashboard.
+
+Both modes use the same `npx convex dev` command. The choice is stored in `.env.local`, and all subsequent `npx convex dev` runs use whatever mode is configured there. Here's what `.env.local` looks like for each:
+
+**Cloud** — URLs point to Convex's servers:
+
+```plaintext
+CONVEX_DEPLOYMENT=dev:<your-project-slug>
+VITE_CONVEX_URL=https://<your-project-slug>.convex.cloud
+VITE_CONVEX_SITE_URL=https://<your-project-slug>.convex.site
+```
+
+**Local** — URLs point to localhost:
+
+```plaintext
+CONVEX_DEPLOYMENT=local:<your-local-slug>
+VITE_CONVEX_URL=http://127.0.0.1:3210
+VITE_CONVEX_SITE_URL=http://127.0.0.1:3211
+```
+
+Similarly, `npx convex dashboard` opens the appropriate dashboard based on `.env.local` — the cloud dashboard for cloud deployments, or a local dashboard for local deployments.
+
+**Switching between modes:** Delete `.env.local` and run `npx convex dev` again. You'll be prompted to create a new project or choose an existing one (including any you've created before, local or cloud).
 
 ## First-Time Dev Setup
 
@@ -27,38 +56,53 @@ pnpm install
 
 This installs both frontend and Convex dependencies (they share a single `package.json`).
 
-### 2. Start Convex Dev Server
+### 2. Initialize Convex
 
 ```bash
 npx convex dev
 ```
 
-The first time you run this, Convex walks you through:
+The first time you run this, Convex walks you through setup:
 
-1. **Log in** — opens a browser tab to authenticate with your Convex account (create one at [convex.dev](https://www.convex.dev/) if you don't have one)
-2. **Create a project** — pick a name (the repo name works fine)
-3. **Generate `.env.local`** — Convex writes `CONVEX_DEPLOYMENT` and `VITE_CONVEX_URL` to `.env.local`
+1. **Create or choose a project** — you'll be asked whether to create a new project or choose an existing one. If creating new, pick a name (the repo name works fine).
+2. **Cloud or local** — you'll be asked to choose between a cloud deployment and a local deployment (BETA). See [Cloud vs. Local Development](#cloud-vs-local-development) above for the differences.
+3. **Log in** (cloud only) — if you chose cloud, Convex opens a browser tab to authenticate with your Convex account (create one at [convex.dev](https://www.convex.dev/) if you don't have one). Local deployments skip this step entirely.
+4. **Generate `.env.local`** — Convex writes `CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL`, and `VITE_CONVEX_SITE_URL` to `.env.local`.
+
+> **Shortcut:** If you want to skip the cloud/local prompt and go straight to a local deployment (without creating an account), run `npx convex dev --local` instead.
 
 After setup, the dev server watches `convex/` for changes and deploys them automatically. It also generates the `convex/_generated/` directory containing typed API references.
 
 ### 3. Generate Auth Keys
 
-`@convex-dev/auth` needs a JWT key pair to sign session tokens. Generate them by running the following command in another terminal:
+`@convex-dev/auth` needs a JWT key pair to sign session tokens. Open another terminal and run:
 
 ```bash
 npx @convex-dev/auth
 ```
 
-This generates `JWT_PRIVATE_KEY` and `JWKS` and automatically stores them on your Convex server.
+This generates `JWT_PRIVATE_KEY` and `JWKS` and automatically stores them on your Convex deployment (whether cloud or local).
 
-### 4. Set Environment Variables on the Convex Dashboard
+### 4. Set Environment Variables
 
-In addition to the `JWT_PRIVATE_KEY` and `JWKS`, you also need to set the `OPENROUTER_API_KEY` and `SITE_URL` environment variables.
+In addition to `JWT_PRIVATE_KEY` and `JWKS` (set by Step 3), you need to set `OPENROUTER_API_KEY` and `SITE_URL`. You can set them through the dashboard UI or the CLI — both work the same way for cloud and local deployments (they target whichever deployment is configured in `.env.local`).
 
-1. Go to [dashboard.convex.dev](https://dashboard.convex.dev/)
-2. Select your project
-3. Go to **Settings** > **Environment Variables**
-4. Add these:
+**Via the dashboard:**
+
+```bash
+npx convex dashboard
+```
+
+This opens the dashboard for your current deployment (cloud or local). Go to **Settings** > **Environment Variables** and add the variables listed below.
+
+**Via the CLI:**
+
+```bash
+npx convex env set SITE_URL http://localhost:5173
+npx convex env set OPENROUTER_API_KEY your-openrouter-api-key
+```
+
+**You need these four variables set on your Convex deployment:**
 
 | Variable             | Value                                                    |
 | -------------------- | -------------------------------------------------------- |
@@ -66,6 +110,8 @@ In addition to the `JWT_PRIVATE_KEY` and `JWKS`, you also need to set the `OPENR
 | `JWKS`               | The public key JSON from Step 3                          |
 | `OPENROUTER_API_KEY` | Your OpenRouter API key (for server-side AI calls)       |
 | `SITE_URL`           | `http://localhost:5173` (required by `@convex-dev/auth`) |
+
+You can verify all variables are set with `npx convex env list`.
 
 ### 5. Start the Dev Servers
 
@@ -80,6 +126,12 @@ This uses `concurrently` to start the Convex backend and Vite frontend in one te
 ```bash
 pnpm run dev:backend    # starts Convex dev server
 pnpm run dev:frontend   # starts Vite dev server (in another terminal)
+```
+
+To inspect data and run functions, open the dashboard:
+
+```bash
+npx convex dashboard
 ```
 
 The app should load, auto-sign-in anonymously, and you can start chatting.
@@ -183,10 +235,12 @@ The `CONVEX_DEPLOY_KEY` environment variable authenticates the deploy without in
 
 **"VITE_CONVEX_URL is not set"** — You haven't run `npx convex dev` yet, or `.env.local` is missing. Run `npx convex dev` to generate it.
 
-**"Not authenticated" errors in the app** — The anonymous auth provider may not be configured. Check that `convex/auth.ts` exports the anonymous provider and that `SITE_URL` is set in the Convex dashboard environment variables.
+**"Not authenticated" errors in the app** — The anonymous auth provider may not be configured. Check that `convex/auth.ts` exports the anonymous provider and that `SITE_URL` is set. For cloud deployments, check the dashboard. For local deployments, verify with `npx convex env list`.
 
 **Functions not updating** — Make sure `npx convex dev` is running. It watches `convex/` and auto-deploys. If it crashed, restart it.
 
 **Backend tests fail with "module not found"** — Run `npx convex dev` once to generate `convex/_generated/`. The test runner needs these generated files.
 
 **"Schema mismatch" on deploy** — Your local schema differs from what's deployed. This usually means someone else deployed a different schema. Run `npx convex dev` to sync, resolve any conflicts, then redeploy.
+
+**Want to switch between cloud and local?** — Delete `.env.local` and run `npx convex dev` again. You'll be prompted to create a new project or choose an existing one (you can pick a project you created before in either mode).
