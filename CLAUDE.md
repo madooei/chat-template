@@ -4,11 +4,11 @@
 
 ## Project Description
 
-A "bring your own API key" AI chat application. Users pick a provider, supply their own key, and chat. Phase 2 adds a Convex backend with anonymous auth, SSE streaming via Hono, and server-side AI calls through OpenRouter.
+An AI chat application with anonymous auth and deep research capabilities. The Convex backend handles auth, data persistence, and SSE streaming of AI responses via OpenRouter. A Mastra agent server provides deep research: multi-step web search, evaluation, and report generation. Three services: Frontend (React/Vite) + Convex (backend) + Mastra (AI agents).
 
 ## Tech Stack
 
-React 19, TypeScript, Vite, Convex, Hono, @convex-dev/auth, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, prompt-kit, Vercel AI SDK, @openrouter/ai-sdk-provider, Vitest, Playwright
+React 19, TypeScript, Vite, Convex, Hono, @convex-dev/auth, Mastra, Legend-State, Wouter, Tailwind CSS v4, shadcn/ui, prompt-kit, Vercel AI SDK, @openrouter/ai-sdk-provider, Vitest, Playwright
 
 ## Commands
 
@@ -38,6 +38,7 @@ Feature-based modules following a pipeline: `types/ → store/ → hooks/ → co
 
 ```plaintext
 convex/              # Convex backend (schema, queries, mutations, HTTP endpoints)
+mastra/              # Mastra AI agent server (research agents, tools, workflows)
 src/
 ├── store/           # Shared state utilities (persisted observable, theme)
 ├── chats/           # Chat feature (types, store, hooks, components, pages)

@@ -1,6 +1,6 @@
 # Chat Template
 
-A "bring your own API key" AI chat application built with React, Vite, Convex, and Hono. Users pick a provider, supply their own key, and chat. The Convex backend handles anonymous auth, data persistence, and SSE streaming of AI responses via OpenRouter.
+An AI chat application built with React, Vite, Convex, Hono, and Mastra. Users sign in anonymously and chat — no API key required. The Convex backend handles auth, data persistence, and SSE streaming of AI responses via OpenRouter. A Mastra agent server provides deep research capabilities: multi-step web search, evaluation, and report generation.
 
 ## Prerequisites
 
@@ -9,6 +9,25 @@ A "bring your own API key" AI chat application built with React, Vite, Convex, a
 - [Node.js 18+](https://nodejs.org/en/download/) — includes npm
 - [pnpm](https://pnpm.io/) — install with `npm install -g pnpm`
 
+## Architecture
+
+The app runs as three services:
+
+1. **Frontend** (React/Vite) — the SPA that runs in the browser
+2. **Convex** — the backend (database, auth, server functions, SSE streaming)
+3. **Mastra** — the AI agent server (deep research workflows)
+
+```plaintext
+Browser ──WebSocket──▶ Convex (database, auth, queries/mutations)
+                         │
+                         ├──SSE──▶ OpenRouter (normal chat streaming)
+                         │
+                         └──HTTP──▶ Mastra (deep research agents)
+                                      │
+                                      ├──▶ OpenRouter (LLM calls)
+                                      └──▶ Exa (web search)
+```
+
 ## Getting Started
 
 ```bash
@@ -16,12 +35,21 @@ pnpm install
 pnpm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173), go to Settings, enter your API key, and start chatting.
+This starts both the Convex backend and the Vite frontend. Open [http://localhost:5173](http://localhost:5173) and start chatting — sign-in is automatic, no API key required.
+
+To also run deep research locally, start the Mastra dev server in a separate terminal:
+
+```bash
+pnpm run dev:mastra
+```
+
+See the [Convex guide](guides/convex.md) and [Mastra guide](guides/mastra.md) for detailed setup instructions.
 
 ## Project Structure
 
 ```plaintext
 convex/              # Convex backend (schema, queries, mutations, HTTP endpoints)
+mastra/              # Mastra AI agent server (research agents, tools, workflows)
 src/
 ├── store/           # Shared state utilities (persisted observable, theme)
 ├── chats/           # Chat feature (types, store, hooks, components, pages)
@@ -49,9 +77,10 @@ Each feature follows the pipeline: `types/ → store/ → hooks/ → components/
 
 | Command                 | What it does                                       |
 | ----------------------- | -------------------------------------------------- |
-| `pnpm run dev`          | Start backend + frontend concurrently              |
+| `pnpm run dev`          | Start Convex backend + Vite frontend concurrently  |
 | `pnpm run dev:frontend` | Start Vite dev server only                         |
 | `pnpm run dev:backend`  | Start Convex dev server only                       |
+| `pnpm run dev:mastra`   | Start Mastra agent server locally                  |
 | `pnpm run build`        | Type-check and build for production                |
 | `pnpm run test`         | Run unit/integration tests (Vitest)                |
 | `pnpm run test:watch`   | Run tests in watch mode                            |
@@ -73,7 +102,15 @@ Each feature follows the pipeline: `types/ → store/ → hooks/ → components/
 
 ## Tech Stack
 
-React, TypeScript, Vite, Convex, Hono, @convex-dev/auth, Legend-State, Wouter, Tailwind CSS, shadcn/ui, prompt-kit, Vercel AI SDK, @openrouter/ai-sdk-provider, Vitest, Playwright.
+React, TypeScript, Vite, Convex, Hono, @convex-dev/auth, Mastra, Legend-State, Wouter, Tailwind CSS, shadcn/ui, prompt-kit, Vercel AI SDK, @openrouter/ai-sdk-provider, Vitest, Playwright.
+
+## Documentation
+
+| Folder                 | Audience   | What it contains                                            |
+| ---------------------- | ---------- | ----------------------------------------------------------- |
+| [`guides/`](guides/)   | Developers | How-to guides for Convex, Mastra, testing, deployment, etc. |
+| [`docs/`](docs/)       | Team       | Product requirements, tech decisions, iteration plans       |
+| [`manuals/`](manuals/) | End users  | Step-by-step walkthroughs with screenshots                  |
 
 ## AI-Assisted Development
 
