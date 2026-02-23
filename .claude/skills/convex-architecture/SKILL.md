@@ -22,6 +22,7 @@ Prescriptive design pattern for organizing Convex backends with clean separation
 - **[convex-guards](../convex-guards/SKILL.md)** — Authorization patterns
 - **[convex-performance](../convex-performance/SKILL.md)** — Performance patterns, batch loading
 - **[convex-testing](../convex-testing/SKILL.md)** — Testing with convex-test
+- **[convex-debug](../convex-debug/SKILL.md)** — Debugging, MCP tools, documentation lookup
 
 ---
 

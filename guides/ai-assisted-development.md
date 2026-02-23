@@ -99,6 +99,20 @@ A hook in `.claude/settings.json` runs `pnpm run validate` (type-check + lint + 
 > The pre-commit hook failed. Fix the type errors.
 ```
 
+## Managing MCP Servers
+
+This project configures MCP (Model Context Protocol) servers in `.mcp.json` that give Claude access to external documentation and tools. MCP servers consume tokens while active, so they are **disabled by default** in `.claude/settings.json`.
+
+When you open Claude Code, it detects the configured MCP servers and may ask if you want to enable them. You can also manage them at any time:
+
+```plaintext
+> /mcp
+```
+
+This opens the MCP management panel where you can connect or disconnect servers.
+
+**Recommendation:** Only enable the MCP servers you need for your current task, then disconnect them when you're done. MCP servers provide powerful tools, but they consume tokens, so use them strategically.
+
 ## Tips for Getting Good Results
 
 **Be specific about what you want.** "Add a component" is vague. "Add a BookmarkButton that renders a star icon, toggles on click, and calls `useBookmarkMutation().toggle(chatId)`" gives Claude everything it needs.

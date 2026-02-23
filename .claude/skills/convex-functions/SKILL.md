@@ -21,6 +21,7 @@ Patterns for writing Convex queries, mutations, actions, guards, helpers, and in
 - **[convex-schema](../convex-schema/SKILL.md)** — Schema patterns, type hierarchy, indexes
 - **[convex-guards](../convex-guards/SKILL.md)** — Authorization patterns
 - **[convex-performance](../convex-performance/SKILL.md)** — Performance patterns, batch loading
+- **[convex-debug](../convex-debug/SKILL.md)** — Debugging, MCP tools, documentation lookup
 
 ---
 

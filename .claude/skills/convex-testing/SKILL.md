@@ -20,6 +20,7 @@ Testing patterns for Convex backends using `convex-test` and `vitest`.
 - **[convex-functions](../convex-functions/SKILL.md)** — Function patterns being tested
 - **[convex-guards](../convex-guards/SKILL.md)** — Authorization logic to test
 - **[convex-architecture](../convex-architecture/SKILL.md)** — Domain file organization tests depend on
+- **[convex-debug](../convex-debug/SKILL.md)** — Debugging, MCP tools, documentation lookup
 
 ## Quick Reference
 
