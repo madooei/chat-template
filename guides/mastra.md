@@ -45,7 +45,7 @@ mastra/
 └── tsconfig.json
 ```
 
-The `src/mastra/` path is required by the Mastra CLI — it looks for the entry file at `src/mastra/src/mastra/index.ts` by default.
+The `src/mastra/` path is required by the Mastra CLI — it looks for the entry file at `src/mastra/index.ts` by default.
 
 The `mastra/` directory has its own `package.json` and `node_modules`. It runs as a separate process from the Vite dev server.
 
@@ -120,19 +120,21 @@ Tell Convex where the Mastra server is running:
 npx convex env set MASTRA_URL http://localhost:4111
 ```
 
-### Step 4 — Start all three servers
+### Step 4 — Start the servers
+
+Start the Convex backend and Vite frontend:
 
 ```bash
 pnpm run dev
 ```
 
-This uses `concurrently` to start the Convex backend, Vite frontend, and Mastra dev server in one terminal. You can also run them separately:
+Then, in a **separate terminal**, start the Mastra dev server:
 
 ```bash
-pnpm run dev:backend    # Convex dev server
-pnpm run dev:frontend   # Vite dev server
 pnpm run dev:mastra     # Mastra dev server (port 4111)
 ```
+
+> **Note:** `pnpm run dev` starts only the Convex backend and Vite frontend. The Mastra dev server must be started separately. If you are using the deployed Mastra server (e.g., on Mastra Cloud) instead of a local one, you can skip `dev:mastra` entirely — just make sure the Convex `MASTRA_URL` environment variable points to the deployed URL.
 
 Mastra starts on port 4111 and opens the Studio UI at `http://localhost:4111`. The Studio lets you test agents interactively without the frontend.
 
@@ -196,10 +198,10 @@ export const myTool = createTool({
   inputSchema: z.object({
     query: z.string().describe("The input query"),
   }),
-  execute: async (input, context) => {
-    // input is the validated Zod object
+  execute: async (inputData, context) => {
+    // inputData is the validated Zod object
     // context.mastra.getAgent("agentName") accesses other agents
-    return { result: `Processed: ${input.query}` };
+    return { result: `Processed: ${inputData.query}` };
   },
 });
 ```
