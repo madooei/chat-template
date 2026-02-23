@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --names backend,frontend,mastra -c blue,green,magenta \"pnpm run dev:backend\" \"pnpm run dev:frontend\" \"pnpm run dev:mastra\"",
+    "dev": "concurrently --names backend,frontend -c blue,green \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
     "dev:backend": "npx convex dev",
     "dev:frontend": "vite",
     "dev:mastra": "cd mastra && npx mastra dev",

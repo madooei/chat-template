@@ -16,6 +16,7 @@ React 19, TypeScript, Vite, Convex, Hono, @convex-dev/auth, Legend-State, Wouter
 - Run development server (backend + frontend): `pnpm run dev`
 - Run frontend only: `pnpm run dev:frontend`
 - Run backend only: `pnpm run dev:backend`
+- Run Mastra dev server locally: `pnpm run dev:mastra`
 - Run tests: `pnpm run test`
 - Run tests in watch mode: `pnpm run test:watch`
 - Run E2E tests: `pnpm run test:e2e`
