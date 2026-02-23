@@ -5,3 +5,4 @@ End-user manuals with step-by-step screenshots. These guides are written for peo
 | Manual                                  | What it covers                                                                 |
 | --------------------------------------- | ------------------------------------------------------------------------------ |
 | [Getting Started](./getting-started.md) | First-time setup — creating a chat, sending a message, trying the weather tool |
+| [Deep Research](./deep-research.md)     | Using the deep research feature to get comprehensive reports on any topic       |
