@@ -153,6 +153,21 @@ Phase 1 runs entirely in the browser — IndexedDB is the database. Phase 2 intr
 
 Convex is open source (FSL Apache 2.0, converting to full Apache 2.0 two years after release). The backend, dashboard, client libraries, and CLI are all open source, and you can self-host via Docker if you want full control. For this template we use Convex Cloud because it eliminates operational complexity — but there's no lock-in. If you outgrow the hosted service or need to run on your own infrastructure, the self-hosted path exists with the same codebase the cloud service runs.
 
+### Mastra as the Agentic Framework (Phase 3)
+
+Phase 2 gave us a real backend with server-side AI calls through OpenRouter. Phase 3 adds agentic capabilities — agents that can use tools, maintain memory, and orchestrate multi-step workflows. We chose [Mastra](https://mastra.ai/) over alternatives (LangChain, CrewAI, AutoGen, building from scratch with the AI SDK) for reasons that align with the template's philosophy:
+
+- **Pure TypeScript, code-first** — agents, tools, and workflows are defined as TypeScript code. No YAML configs, no drag-and-drop builders, no DSLs. The same language students use for React and Convex extends to agent definitions. If you can write a function, you can write a tool. If you can define a class, you can define an agent.
+- **Composable primitives** — Mastra provides five building blocks: Agents (LLM + instructions + tools), Tools (Zod-validated functions agents can call), Workflows (multi-step orchestrations with suspend/resume), Memory (conversation history with optional semantic recall), and Storage (pluggable persistence). Each is independent — use agents without workflows, tools without memory, or the full stack together. No all-or-nothing commitment.
+- **Built on the AI SDK** — Mastra uses Vercel AI SDK for model communication, the same SDK we already use in Phase 2 for direct chat. This means the same `streamText` patterns, the same provider adapters, and the same mental model. Adding Mastra doesn't introduce a second way of talking to LLMs — it extends the one we already have with agent capabilities on top.
+- **Runs as a separate server** — Mastra builds to a standalone HTTP server with streaming endpoints for each agent. This keeps it cleanly separated from the Convex backend. The Convex backend calls Mastra via HTTP (using `MastraClient`), and the Mastra server handles agent orchestration, tool execution, and memory. Each service has one job.
+- **Built-in dev tooling** — `npx mastra dev` starts a development server with a Studio UI at `localhost:4111`. You can test agents interactively, inspect tool calls, and debug workflows without running the full app. This tight feedback loop matters when iterating on agent behavior.
+- **Flexible deployment** — Mastra Cloud offers managed hosting for quick setup. For more control, `npx mastra build` produces a plain Node.js server you can deploy anywhere (Railway, Render, Fly.io). There's also a Netlify Functions deployer for colocation with the frontend. Three options from zero-ops to full control.
+- **Not a platform, just a package** — Mastra is an open-source npm package (Apache 2.0), not a hosted platform you depend on. Mastra Cloud is optional managed hosting. You can run the same code on your own infrastructure with no vendor lock-in. This matters for a teaching context — students learn transferable patterns, not a specific vendor's API.
+- **MCP documentation server** — Mastra ships with `@mastra/mcp-docs-server`, an MCP server that gives Claude Code direct access to Mastra's documentation, API references, and type definitions from your installed packages. When working on agents or tools, enabling this MCP gives Claude version-matched answers without web searches. It's configured in `.mcp.json` but disabled by default to save tokens — enable it via `/mcp` when you need it.
+
+The architecture in Phase 3 is three cooperating services: the React frontend (Netlify) talks to the Convex backend, which talks to the Mastra server for agent tasks. The frontend never sees Mastra directly — the Mastra URL is a server-side environment variable on the Convex deployment. This keeps API keys server-side and gives Convex full control over when and how agent capabilities are invoked.
+
 ## The Phases
 
 This template is designed to evolve in phases:
