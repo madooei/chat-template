@@ -1,12 +1,17 @@
-import { useSelector } from "@legendapp/state/react";
-import { $settings } from "@/settings/store/settings";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { SettingsType } from "@/settings/types/settings";
 
 export function useQuerySettings() {
-  const settings = useSelector($settings);
+  const result = useQuery(api.users_queries.getMe);
+
+  const data: SettingsType = {
+    displayName: result?.name ?? "",
+  };
 
   return {
-    data: settings,
-    loading: false,
+    data,
+    loading: result === undefined,
     error: false,
   };
 }

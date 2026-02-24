@@ -4,12 +4,15 @@ import { createRoot } from "react-dom/client";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { Toaster } from "@/components/ui/sonner";
 import { convex } from "@/lib/convex";
+import ErrorBoundary from "@/components/error-boundary";
 import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ConvexAuthProvider client={convex}>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
       <Toaster richColors position="top-center" />
     </ConvexAuthProvider>
   </StrictMode>,

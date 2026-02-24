@@ -1,10 +1,28 @@
 import { useState } from "react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TooltipButton } from "@/components/tooltip-button";
-import { BotMessageSquareIcon, Menu, Settings } from "lucide-react";
+import { BotMessageSquareIcon, LogOut, Menu, Settings } from "lucide-react";
 import SettingsDialog from "@/settings/pages/settings-page";
+import { AUTH_MODE } from "@/config/env";
+
+function SignOutButton() {
+  const { signOut } = useAuthActions();
+  return (
+    <TooltipButton
+      variant="ghost"
+      size="icon"
+      className="w-7 h-7"
+      tooltipContent="Sign out"
+      aria-label="Sign out"
+      onClick={() => signOut()}
+    >
+      <LogOut className="h-4 w-4" />
+    </TooltipButton>
+  );
+}
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -44,6 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           >
             <Settings className="h-4 w-4" />
           </TooltipButton>
+          {AUTH_MODE === "password" && <SignOutButton />}
           <ThemeToggle />
         </div>
       </header>

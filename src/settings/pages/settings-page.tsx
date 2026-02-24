@@ -21,9 +21,13 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
   const { data: settings } = useQuerySettings();
   const { edit } = useMutationSettings();
 
-  const handleSubmit = (values: SettingsType) => {
-    edit(values);
-    onOpenChange(false);
+  const handleSubmit = async (values: SettingsType) => {
+    try {
+      await edit(values);
+      onOpenChange(false);
+    } catch {
+      // Error already shown as toast by useMutationSettings
+    }
   };
 
   return (

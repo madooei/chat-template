@@ -21,6 +21,7 @@ import { useChat } from "@/messages/hooks/use-chat";
 import MessageList from "@/messages/components/message-list";
 import MessageInput from "@/messages/components/message-input";
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/config/models";
+import NotFoundPage from "@/components/not-found-page";
 
 interface MessagesPageProps {
   chatId: string;
@@ -60,9 +61,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ chatId }) => {
   }
 
   if (!chat) {
-    return (
-      <div className="p-4 text-sm text-muted-foreground">Chat not found.</div>
-    );
+    return <NotFoundPage />;
   }
 
   return (
