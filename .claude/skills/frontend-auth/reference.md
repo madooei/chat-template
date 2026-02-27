@@ -67,15 +67,13 @@ return AUTH_MODE === "password" ? <PasswordApp /> : <AnonymousApp />;
 ```typescript
 <AuthLoading>{
   /* shown while checking session */
-} <
-  Unauthenticated >
-  {
-    /* shows AuthPage */
-  } <
-  Authenticated >
-  {
-    /* shows MainApp */
-  };
+}<Unauthenticated>;
+{
+  /* shows AuthPage */
+}
+<Authenticated>{
+  /* shows MainApp */
+};
 ```
 
 **AnonymousApp** uses `useAutoSignIn()` to silently authenticate, then renders `MainApp`.

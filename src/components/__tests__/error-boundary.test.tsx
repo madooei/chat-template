@@ -1,52 +1,35 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
-import ErrorBoundary from "../error-boundary";
+import { ErrorFallback } from "../error-boundary";
 
-function ProblemChild() {
-  throw new Error("Test explosion");
-  return null;
-}
-
-function GoodChild() {
-  return <div>All good</div>;
-}
-
-describe("ErrorBoundary", () => {
-  beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("renders children when no error occurs", () => {
+describe("ErrorFallback", () => {
+  it("shows error message from an Error object", () => {
     render(
-      <ErrorBoundary>
-        <GoodChild />
-      </ErrorBoundary>,
-    );
-
-    expect(screen.getByText("All good")).toBeInTheDocument();
-  });
-
-  it("shows error UI when a child throws", () => {
-    render(
-      <ErrorBoundary>
-        <ProblemChild />
-      </ErrorBoundary>,
+      <ErrorFallback
+        error={new Error("Test explosion")}
+        resetError={() => {}}
+      />,
     );
 
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
     expect(screen.getByText("Test explosion")).toBeInTheDocument();
   });
 
+  it("shows default message for non-Error values", () => {
+    render(<ErrorFallback error="string error" resetError={() => {}} />);
+
+    expect(
+      screen.getByText("An unexpected error occurred."),
+    ).toBeInTheDocument();
+  });
+
   it("shows a Return home button", () => {
     render(
-      <ErrorBoundary>
-        <ProblemChild />
-      </ErrorBoundary>,
+      <ErrorFallback
+        error={new Error("Test explosion")}
+        resetError={() => {}}
+      />,
     );
 
     expect(
@@ -54,10 +37,10 @@ describe("ErrorBoundary", () => {
     ).toBeInTheDocument();
   });
 
-  it("navigates home on Return home click", async () => {
+  it("calls resetError and navigates home on click", async () => {
     const user = userEvent.setup();
+    const resetError = vi.fn();
 
-    // Mock window.location.href
     const locationSpy = vi.spyOn(window, "location", "get").mockReturnValue({
       ...window.location,
       href: "/some-page",
@@ -77,13 +60,15 @@ describe("ErrorBoundary", () => {
     );
 
     render(
-      <ErrorBoundary>
-        <ProblemChild />
-      </ErrorBoundary>,
+      <ErrorFallback
+        error={new Error("Test explosion")}
+        resetError={resetError}
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: "Return home" }));
 
+    expect(resetError).toHaveBeenCalled();
     expect(hrefSetter).toHaveBeenCalledWith("/");
 
     locationSpy.mockRestore();
