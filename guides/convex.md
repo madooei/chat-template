@@ -13,7 +13,7 @@ The key pieces:
 - **Mutations** (`*_mutations.ts`) — write functions that modify the database
 - **Actions** (`*_actions.ts`) — side-effect functions that can call external APIs
 - **HTTP actions** (`convex/http.ts`) — traditional HTTP endpoints (we use these for SSE streaming)
-- **Auth** (`convex/auth.ts`) — anonymous authentication via `@convex-dev/auth`
+- **Auth** (`convex/auth.ts`) — authentication via `@convex-dev/auth` (anonymous + password providers)
 
 All of these are TypeScript files in `convex/`. When you run `npx convex dev`, Convex watches this directory and hot-deploys changes automatically.
 
@@ -143,7 +143,7 @@ To inspect data and run functions, open the dashboard:
 npx convex dashboard
 ```
 
-The app should load, auto-sign-in anonymously, and you can start chatting.
+The app should load, show the auth page where you can sign in or continue as a guest, and then start chatting.
 
 ### 6. Run Backend Tests
 

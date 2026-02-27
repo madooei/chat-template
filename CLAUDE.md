@@ -4,7 +4,7 @@
 
 ## Project Description
 
-An AI chat application with anonymous auth and deep research capabilities. The Convex backend handles auth, data persistence, and SSE streaming of AI responses via OpenRouter. A Mastra agent server provides deep research: multi-step web search, evaluation, and report generation. Three services: Frontend (React/Vite) + Convex (backend) + Mastra (AI agents).
+An AI chat application with email/password and guest authentication, plus deep research capabilities. The Convex backend handles auth, data persistence, and SSE streaming of AI responses via OpenRouter. A Mastra agent server provides deep research: multi-step web search, evaluation, and report generation. Three services: Frontend (React/Vite) + Convex (backend) + Mastra (AI agents).
 
 ## Tech Stack
 

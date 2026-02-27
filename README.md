@@ -1,6 +1,6 @@
 # Chat Template
 
-An AI chat application built with React, Vite, Convex, Hono, and Mastra. Users sign in anonymously and chat — no API key required. The Convex backend handles auth, data persistence, and SSE streaming of AI responses via OpenRouter. A Mastra agent server provides deep research capabilities: multi-step web search, evaluation, and report generation.
+An AI chat application built with React, Vite, Convex, Hono, and Mastra. Users sign in with email/password or continue as a guest, then chat — no API key required. The Convex backend handles auth, data persistence, and SSE streaming of AI responses via OpenRouter. A Mastra agent server provides deep research capabilities: multi-step web search, evaluation, and report generation.
 
 ## Prerequisites
 

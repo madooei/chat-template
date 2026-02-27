@@ -18,7 +18,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
 });
 ```
 
-The `Anonymous` provider enables guest access. The `Password` provider enables email/password sign-in/sign-up. Both are always registered; `AUTH_MODE` only controls which frontend UI is shown.
+The `Anonymous` provider enables guest access. The `Password` provider enables email/password sign-in/sign-up. Both are always registered on the backend.
 
 ---
 
@@ -41,42 +41,23 @@ export const queryWithAuth = customQuery(baseQuery, {
 
 ---
 
-## Frontend: AUTH_MODE Configuration
+## Frontend: App Routing
 
-`src/config/env.ts`:
-
-```typescript
-export const AUTH_MODE: "anonymous" | "password" =
-  import.meta.env.VITE_AUTH_MODE === "password" ? "password" : "anonymous";
-```
-
-Set `VITE_AUTH_MODE=password` in `.env` to enable the login page. Defaults to anonymous.
-
----
-
-## Frontend: App Routing by Auth Mode
-
-`src/App.tsx` renders different top-level components:
+`src/App.tsx` uses Convex's auth-aware components to route between the auth page and the main app:
 
 ```typescript
-return AUTH_MODE === "password" ? <PasswordApp /> : <AnonymousApp />;
+<AuthLoading>
+  {/* shown while checking session */}
+</AuthLoading>
+<Unauthenticated>
+  <AuthPage />
+</Unauthenticated>
+<Authenticated>
+  <MainApp />
+</Authenticated>
 ```
 
-**PasswordApp** uses Convex's auth-aware components:
-
-```typescript
-<AuthLoading>{
-  /* shown while checking session */
-}<Unauthenticated>;
-{
-  /* shows AuthPage */
-}
-<Authenticated>{
-  /* shows MainApp */
-};
-```
-
-**AnonymousApp** uses `useAutoSignIn()` to silently authenticate, then renders `MainApp`.
+Unauthenticated users see the auth page. Authenticated users see the main app.
 
 ---
 
@@ -123,7 +104,7 @@ export function useAuth() {
 }
 ```
 
-Sign-out is handled separately — `SignOutButton` in `src/layout/header.tsx` calls `useAuthActions().signOut()` directly. This is only rendered when `AUTH_MODE === "password"`.
+Sign-out is handled separately — `SignOutButton` in `src/layout/header.tsx` calls `useAuthActions().signOut()` directly.
 
 ---
 
@@ -156,19 +137,6 @@ export type AuthFlow = "signIn" | "signUp";
   - `"new-password"` for sign-up
 - Submit button disabled while `isSubmitting` is true
 - Props: `onSubmit: (flow, email, password) => void` and `isSubmitting: boolean`
-
----
-
-## Frontend: useAutoSignIn Hook
-
-`src/hooks/use-auto-sign-in.ts` — used only in anonymous mode:
-
-```typescript
-export function useAutoSignIn() {
-  // Calls signIn("anonymous") on mount
-  // Returns { isLoading, isAuthenticated, error }
-}
-```
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: frontend-auth
-description: Authentication system with dual auth modes (anonymous + password). Use when adding auth providers, modifying login/signup flows, working with useAuth hook, configuring AUTH_MODE, protecting routes with Authenticated/Unauthenticated, debugging auth errors, or asking about auth architecture, session management, and @convex-dev/auth integration.
+description: Authentication system with email/password and guest access. Use when adding auth providers, modifying login/signup flows, working with useAuth hook, protecting routes with Authenticated/Unauthenticated, debugging auth errors, or asking about auth architecture, session management, and @convex-dev/auth integration.
 allowed-tools:
   - Read
   - Write
@@ -33,22 +33,6 @@ Authentication patterns using `@convex-dev/auth` with anonymous and password pro
 
 ---
 
-## Auth Modes
-
-The app supports two modes controlled by `VITE_AUTH_MODE` in `.env`:
-
-| Mode          | Env Value    | Behavior                                        |
-| ------------- | ------------ | ----------------------------------------------- |
-| **anonymous** | _(default)_  | Auto-signs in silently via `useAutoSignIn` hook |
-| **password**  | `"password"` | Shows login page with email/password + guest    |
-
-`src/config/env.ts` reads the env var and exports `AUTH_MODE`. `src/App.tsx` branches on it:
-
-- `AUTH_MODE === "password"` renders `PasswordApp` (uses `<Authenticated>` / `<Unauthenticated>`)
-- Otherwise renders `AnonymousApp` (uses `useAutoSignIn()`)
-
----
-
 ## Module Structure
 
 ```plaintext
@@ -73,15 +57,13 @@ No `store/` layer — auth state is managed by `ConvexAuthProvider`, not Legend-
 
 ## Key Files Outside the Module
 
-| File                            | Role                                                       |
-| ------------------------------- | ---------------------------------------------------------- |
-| `convex/auth.ts`                | Registers providers: `Anonymous`, `Password`               |
-| `convex/lib.ts`                 | `queryWithAuth` / `mutationWithAuth` wrappers              |
-| `src/config/env.ts`             | Exports `AUTH_MODE`                                        |
-| `src/hooks/use-auto-sign-in.ts` | Auto-signs anonymous users on first load                   |
-| `src/App.tsx`                   | Routes to `PasswordApp` or `AnonymousApp`                  |
-| `src/main.tsx`                  | Wraps app with `<ConvexAuthProvider>`                      |
-| `src/layout/header.tsx`         | `SignOutButton` shown only when `AUTH_MODE === "password"` |
+| File                    | Role                                                  |
+| ----------------------- | ----------------------------------------------------- |
+| `convex/auth.ts`        | Registers providers: `Anonymous`, `Password`          |
+| `convex/lib.ts`         | `queryWithAuth` / `mutationWithAuth` wrappers         |
+| `src/App.tsx`           | Uses `<Authenticated>` / `<Unauthenticated>` routing  |
+| `src/main.tsx`          | Wraps app with `<ConvexAuthProvider>`                 |
+| `src/layout/header.tsx` | `SignOutButton` always shown for authenticated users  |
 
 ---
 
@@ -103,20 +85,12 @@ No `store/` layer — auth state is managed by `ConvexAuthProvider`, not Legend-
 ## Auth Data Flow
 
 ```plaintext
-Password mode:
-  AuthPage → AuthForm → useAuth().handleAuth() → signIn("password", formData)
-                       → useAuth().handleAnonymousSignIn() → signIn("anonymous")
-    ↓
-  ConvexAuthProvider → convex/auth.ts (Password | Anonymous provider)
-    ↓
-  <Authenticated> renders → MainApp
-
-Anonymous mode:
-  AnonymousApp → useAutoSignIn() → signIn("anonymous")
-    ↓
-  ConvexAuthProvider → convex/auth.ts (Anonymous provider)
-    ↓
-  MainApp renders directly
+AuthPage → AuthForm → useAuth().handleAuth() → signIn("password", formData)
+                     → useAuth().handleAnonymousSignIn() → signIn("anonymous")
+  ↓
+ConvexAuthProvider → convex/auth.ts (Password | Anonymous provider)
+  ↓
+<Authenticated> renders → MainApp
 ```
 
 ---

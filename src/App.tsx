@@ -3,8 +3,6 @@ import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 import { Switch, Route, useLocation } from "wouter";
 import Layout from "@/layout";
 import { useTheme } from "@/hooks/use-theme";
-import { useAutoSignIn } from "@/hooks/use-auto-sign-in";
-import { AUTH_MODE } from "@/config/env";
 import ListChatsPage from "@/chats/pages/list-chats-page";
 import MessagesPage from "@/messages/pages/messages-page";
 import HomeEmptyState from "@/components/home-empty-state";
@@ -39,48 +37,6 @@ function MainApp() {
   );
 }
 
-function AnonymousApp() {
-  const { isLoading, error: authError } = useAutoSignIn();
-
-  if (authError) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-destructive text-sm">
-          Failed to sign in. Please refresh the page.
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-muted-foreground text-sm">Loading...</div>
-      </div>
-    );
-  }
-
-  return <MainApp />;
-}
-
-function PasswordApp() {
-  return (
-    <>
-      <AuthLoading>
-        <div className="flex h-screen items-center justify-center">
-          <div className="text-muted-foreground text-sm">Loading...</div>
-        </div>
-      </AuthLoading>
-      <Unauthenticated>
-        <AuthPage />
-      </Unauthenticated>
-      <Authenticated>
-        <MainApp />
-      </Authenticated>
-    </>
-  );
-}
-
 function App() {
   const { theme } = useTheme();
 
@@ -107,7 +63,21 @@ function App() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  return AUTH_MODE === "password" ? <PasswordApp /> : <AnonymousApp />;
+  return (
+    <>
+      <AuthLoading>
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-muted-foreground text-sm">Loading...</div>
+        </div>
+      </AuthLoading>
+      <Unauthenticated>
+        <AuthPage />
+      </Unauthenticated>
+      <Authenticated>
+        <MainApp />
+      </Authenticated>
+    </>
+  );
 }
 
 export default App;

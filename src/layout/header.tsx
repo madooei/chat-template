@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { TooltipButton } from "@/components/tooltip-button";
 import { BotMessageSquareIcon, LogOut, Menu, Settings } from "lucide-react";
 import SettingsDialog from "@/settings/pages/settings-page";
-import { AUTH_MODE } from "@/config/env";
+
 
 function SignOutButton() {
   const { signOut } = useAuthActions();
@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           >
             <Settings className="h-4 w-4" />
           </TooltipButton>
-          {AUTH_MODE === "password" && <SignOutButton />}
+          <SignOutButton />
           <ThemeToggle />
         </div>
       </header>
