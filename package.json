@@ -23,7 +23,7 @@
     "test:frontend": "vitest run --project frontend",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "validate": "pnpm run type-check && pnpm run lint && pnpm run test",
+    "validate": "npx convex dev --once && pnpm run type-check && pnpm run lint && pnpm run test",
     "preview": "vite preview"
   },
   "dependencies": {
