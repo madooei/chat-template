@@ -12,13 +12,24 @@ Detailed patterns and code examples for the authentication system.
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
+import { DataModel } from "./_generated/dataModel";
+import { ResendOTP } from "./ResendOTP";
+import { ResendOTPPasswordReset } from "./ResendOTPPasswordReset";
+import { validatePasswordRequirements } from "./password_validation";
 
 export const { auth, signIn, signOut, store } = convexAuth({
-  providers: [Anonymous, Password],
+  providers: [
+    Anonymous,
+    Password<DataModel>({
+      verify: ResendOTP,
+      reset: ResendOTPPasswordReset,
+      validatePasswordRequirements,
+    }),
+  ],
 });
 ```
 
-The `Anonymous` provider enables guest access. The `Password` provider enables email/password sign-in/sign-up. Both are always registered on the backend.
+The `Anonymous` provider enables guest access. The `Password` provider enables email/password sign-in/sign-up with email verification (via `verify`) and password reset (via `reset`). The `validatePasswordRequirements` function enforces strong passwords in production. OTP codes are 8-digit numeric, with 20-minute expiry, sent via Resend.
 
 ---
 
@@ -63,46 +74,44 @@ Unauthenticated users see the auth page. Authenticated users see the main app.
 
 ## Frontend: useAuth Hook
 
-`src/auth/hooks/use-auth.ts` — manages authentication state and actions:
+`src/auth/hooks/use-auth.ts` — manages authentication state, multi-step flow, and actions:
 
 ```typescript
 export function useAuth() {
   const { signIn } = useAuthActions();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [step, setStep] = useState<AuthStep>("signIn");
 
-  const handleAuth = async (
-    flow: AuthFlow,
-    email: string,
-    password: string,
-  ) => {
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.set("email", email);
-      formData.set("password", password);
-      formData.set("flow", flow);
-      await signIn("password", formData);
-    } catch (err) {
-      toast.error(friendlyAuthError(err, flow));
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleAuth = async (flow, email, password) => {
+    /* ... setStep({ email }) on success */
   };
-
+  const handleVerifyCode = async (email, code) => {
+    /* flow: "email-verification" */
+  };
+  const handleRequestPasswordReset = async (email) => {
+    /* flow: "reset", returns email|null */
+  };
+  const handleResetPassword = async (email, code, newPassword) => {
+    /* flow: "reset-verification" */
+  };
   const handleAnonymousSignIn = async () => {
-    setIsSubmitting(true);
-    try {
-      await signIn("anonymous");
-    } catch {
-      toast.error("Could not sign in as guest. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    /* signIn("anonymous") */
   };
 
-  return { handleAuth, handleAnonymousSignIn, isSubmitting };
+  return {
+    handleAuth,
+    handleVerifyCode,
+    handleRequestPasswordReset,
+    handleResetPassword,
+    handleAnonymousSignIn,
+    isSubmitting,
+    step,
+    setStep,
+  };
 }
 ```
+
+The `step` state drives which form the auth page shows: `"signIn"` → AuthForm, `{ email }` → VerifyCodeForm, `"forgot"` → ForgotPasswordForm.
 
 Sign-out is handled separately — `SignOutButton` in `src/layout/header.tsx` calls `useAuthActions().signOut()` directly.
 
@@ -120,6 +129,7 @@ export const signInSchema = z.object({
 
 export type SignInData = z.infer<typeof signInSchema>;
 export type AuthFlow = "signIn" | "signUp";
+export type AuthStep = "signIn" | { email: string } | "forgot";
 ```
 
 `AuthForm` validates against `signInSchema` before calling `onSubmit`. Validation errors are shown inline.
@@ -135,8 +145,10 @@ export type AuthFlow = "signIn" | "signUp";
 - Password input with `autocomplete` switching:
   - `"current-password"` for sign-in
   - `"new-password"` for sign-up
+- "Forgot password?" link visible only on sign-in tab
+- Password strength hints checklist visible only on sign-up tab when password is non-empty
 - Submit button disabled while `isSubmitting` is true
-- Props: `onSubmit: (flow, email, password) => void` and `isSubmitting: boolean`
+- Props: `onSubmit: (flow, email, password) => void`, `onForgotPassword: () => void`, and `isSubmitting: boolean`
 
 ---
 
@@ -159,10 +171,14 @@ vi.mock("sonner", () => ({
 
 Test categories:
 
-- Error mapping (all `friendlyAuthError` branches)
-- `handleAuth` form data construction
+- Error mapping (all `friendlyAuthError` branches, including `ConvexError` for `INVALID_PASSWORD`)
+- `handleAuth` form data construction and step transitions
+- `handleVerifyCode` with email-verification flow
+- `handleRequestPasswordReset` with reset flow
+- `handleResetPassword` with reset-verification flow
 - `handleAnonymousSignIn` provider call
 - `isSubmitting` state transitions (before, during, after)
+- `step` state management
 
 ### Component tests (`src/auth/components/__tests__/auth-form.test.tsx`):
 
@@ -171,6 +187,9 @@ Test categories:
 - Validation error display
 - Form submission with correct arguments
 - Disabled state during submission
+- Forgot password link visibility (sign-in only)
+- Forgot password link click handler
+- Password strength hints during sign-up
 
 ### Backend tests (`convex/users.test.ts`):
 

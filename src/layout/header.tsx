@@ -7,7 +7,6 @@ import { TooltipButton } from "@/components/tooltip-button";
 import { BotMessageSquareIcon, LogOut, Menu, Settings } from "lucide-react";
 import SettingsDialog from "@/settings/pages/settings-page";
 
-
 function SignOutButton() {
   const { signOut } = useAuthActions();
   return (

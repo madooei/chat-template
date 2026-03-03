@@ -1,6 +1,6 @@
 ---
 name: frontend-auth
-description: Authentication system with email/password and guest access. Use when adding auth providers, modifying login/signup flows, working with useAuth hook, protecting routes with Authenticated/Unauthenticated, debugging auth errors, or asking about auth architecture, session management, and @convex-dev/auth integration.
+description: Authentication system with email/password (with email verification and password reset via OTP) and guest access. Use when adding auth providers, modifying login/signup flows, working with useAuth hook, protecting routes with Authenticated/Unauthenticated, debugging auth errors, or asking about auth architecture, session management, and @convex-dev/auth integration.
 allowed-tools:
   - Read
   - Write
@@ -13,7 +13,7 @@ allowed-tools:
 
 # Frontend Auth Guide
 
-Authentication patterns using `@convex-dev/auth` with anonymous and password providers.
+Authentication patterns using `@convex-dev/auth` with anonymous and password providers, including email verification via OTP and password reset.
 
 ## Related Skills
 
@@ -38,17 +38,26 @@ Authentication patterns using `@convex-dev/auth` with anonymous and password pro
 ```plaintext
 src/auth/
 ├── types/
-│   └── auth.ts              # signInSchema, SignInData, AuthFlow
+│   ├── auth.ts              # signInSchema, SignInData, AuthFlow, AuthStep
+│   ├── password.ts          # PasswordRequirement, strongPasswordRequirements
+│   └── __tests__/
+│       └── password.test.ts
 ├── hooks/
-│   ├── use-auth.ts          # handleAuth, handleAnonymousSignIn, isSubmitting
+│   ├── use-auth.ts          # handleAuth, handleVerifyCode, handleRequestPasswordReset,
+│   │                        # handleResetPassword, handleAnonymousSignIn, step, isSubmitting
 │   └── __tests__/
 │       └── use-auth.test.ts
 ├── components/
-│   ├── auth-form.tsx        # Tabbed sign-in/sign-up form
+│   ├── auth-form.tsx         # Tabbed sign-in/sign-up form with password hints
+│   ├── code-input.tsx        # 8-digit OTP input (wraps shadcn InputOTP)
+│   ├── verify-code-form.tsx  # Email verification step after sign-up
+│   ├── forgot-password-form.tsx # Password reset flow (email → code + new password)
 │   └── __tests__/
-│       └── auth-form.test.tsx
+│       ├── auth-form.test.tsx
+│       ├── verify-code-form.test.tsx
+│       └── forgot-password-form.test.tsx
 └── pages/
-    └── auth-page.tsx        # Full auth page with form + guest button
+    └── auth-page.tsx        # Multi-step auth page (signIn/verify/forgot)
 ```
 
 No `store/` layer — auth state is managed by `ConvexAuthProvider`, not Legend-State.
@@ -57,13 +66,19 @@ No `store/` layer — auth state is managed by `ConvexAuthProvider`, not Legend-
 
 ## Key Files Outside the Module
 
-| File                    | Role                                                  |
-| ----------------------- | ----------------------------------------------------- |
-| `convex/auth.ts`        | Registers providers: `Anonymous`, `Password`          |
-| `convex/lib.ts`         | `queryWithAuth` / `mutationWithAuth` wrappers         |
-| `src/App.tsx`           | Uses `<Authenticated>` / `<Unauthenticated>` routing  |
-| `src/main.tsx`          | Wraps app with `<ConvexAuthProvider>`                 |
-| `src/layout/header.tsx` | `SignOutButton` always shown for authenticated users  |
+| File                                      | Role                                                          |
+| ----------------------------------------- | ------------------------------------------------------------- |
+| `convex/auth.ts`                          | Registers providers: `Anonymous`, `Password` (verify + reset) |
+| `convex/errors.ts`                        | Error constants (`INVALID_PASSWORD`)                          |
+| `convex/password_validation.ts`           | Server-side password validation (env-aware)                   |
+| `convex/ResendOTP.ts`                     | Email OTP provider for sign-up verification                   |
+| `convex/ResendOTPPasswordReset.ts`        | Email OTP provider for password reset                         |
+| `convex/emails/VerificationCodeEmail.tsx` | React Email template for verification                         |
+| `convex/emails/PasswordResetEmail.tsx`    | React Email template for password reset                       |
+| `convex/lib.ts`                           | `queryWithAuth` / `mutationWithAuth` wrappers                 |
+| `src/App.tsx`                             | Uses `<Authenticated>` / `<Unauthenticated>` routing          |
+| `src/main.tsx`                            | Wraps app with `<ConvexAuthProvider>`                         |
+| `src/layout/header.tsx`                   | `SignOutButton` always shown for authenticated users          |
 
 ---
 
@@ -71,24 +86,30 @@ No `store/` layer — auth state is managed by `ConvexAuthProvider`, not Legend-
 
 `friendlyAuthError()` in `use-auth.ts` converts Convex auth errors to user-friendly messages:
 
-| Backend Error          | User Message                                  |
-| ---------------------- | --------------------------------------------- |
-| `InvalidAccountId`     | "Invalid email or password"                   |
-| `InvalidSecret`        | "Invalid email or password"                   |
-| `AccountAlreadyExists` | "An account with this email already exists"   |
-| `already exists`       | "An account with this email already exists"   |
-| _(other, signIn flow)_ | "Could not sign in. Please try again."        |
-| _(other, signUp flow)_ | "Could not create account. Please try again." |
+| Backend Error                     | User Message                                  |
+| --------------------------------- | --------------------------------------------- |
+| `ConvexError("INVALID_PASSWORD")` | "Password does not meet requirements"         |
+| `InvalidAccountId`                | "Invalid email or password"                   |
+| `InvalidSecret`                   | "Invalid email or password"                   |
+| `AccountAlreadyExists`            | "An account with this email already exists"   |
+| `already exists`                  | "An account with this email already exists"   |
+| _(other, signIn flow)_            | "Could not sign in. Please try again."        |
+| _(other, signUp flow)_            | "Could not create account. Please try again." |
 
 ---
 
 ## Auth Data Flow
 
 ```plaintext
-AuthPage → AuthForm → useAuth().handleAuth() → signIn("password", formData)
-                     → useAuth().handleAnonymousSignIn() → signIn("anonymous")
+AuthPage (step state machine: "signIn" | { email } | "forgot")
+  ├─ step="signIn" → AuthForm → useAuth().handleAuth() → signIn("password", formData)
+  │                            → useAuth().handleAnonymousSignIn() → signIn("anonymous")
+  │                  (on success → setStep({ email }))
+  ├─ step={ email } → VerifyCodeForm → useAuth().handleVerifyCode() → signIn("password", formData w/ flow="email-verification")
+  └─ step="forgot"  → ForgotPasswordForm → useAuth().handleRequestPasswordReset() → signIn("password", formData w/ flow="reset")
+                                          → useAuth().handleResetPassword() → signIn("password", formData w/ flow="reset-verification")
   ↓
-ConvexAuthProvider → convex/auth.ts (Password | Anonymous provider)
+ConvexAuthProvider → convex/auth.ts (Password w/ verify+reset | Anonymous provider)
   ↓
 <Authenticated> renders → MainApp
 ```

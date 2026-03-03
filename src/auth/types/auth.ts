@@ -8,3 +8,5 @@ export const signInSchema = z.object({
 export type SignInData = z.infer<typeof signInSchema>;
 
 export type AuthFlow = "signIn" | "signUp";
+
+export type AuthStep = "signIn" | { email: string } | "forgot";

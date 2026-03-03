@@ -106,13 +106,15 @@ npx convex env set OPENROUTER_API_KEY your-openrouter-api-key
 
 **You need these four variables set on your Convex deployment:**
 
-| Variable             | Value                                                    |
-| -------------------- | -------------------------------------------------------- |
-| `JWT_PRIVATE_KEY`    | The private key from Step 3                              |
-| `JWKS`               | The public key JSON from Step 3                          |
-| `OPENROUTER_API_KEY` | Your OpenRouter API key (for server-side AI calls)       |
-| `SITE_URL`           | `http://localhost:5173` (required by `@convex-dev/auth`) |
-| `MASTRA_URL`         | `http://localhost:4111` (Mastra server for research)     |
+| Variable             | Value                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `JWT_PRIVATE_KEY`    | The private key from Step 3                                                                                   |
+| `JWKS`               | The public key JSON from Step 3                                                                               |
+| `OPENROUTER_API_KEY` | Your OpenRouter API key (for server-side AI calls)                                                            |
+| `SITE_URL`           | `http://localhost:5173` (required by `@convex-dev/auth`)                                                      |
+| `MASTRA_URL`         | `http://localhost:4111` (Mastra server for research)                                                          |
+| `AUTH_RESEND_KEY`    | Resend API key for email verification and password reset                                                      |
+| `AUTH_EMAIL`         | Sender address, e.g. `Chat Template <noreply@yourdomain.com>` (optional, defaults to `onboarding@resend.dev`) |
 
 You can set `MASTRA_URL` via the CLI instead of the dashboard:
 
@@ -203,13 +205,15 @@ This creates a production deployment (separate from your dev deployment) and dep
 
 On the Convex dashboard, switch to your **production** deployment and set:
 
-| Variable             | Value                                                    |
-| -------------------- | -------------------------------------------------------- |
-| `JWT_PRIVATE_KEY`    | Same private key (or generate a new pair for production) |
-| `JWKS`               | Matching public key JSON                                 |
-| `OPENROUTER_API_KEY` | Your production OpenRouter API key                       |
-| `SITE_URL`           | Your production URL (e.g., `https://myapp.netlify.app`)  |
-| `MASTRA_URL`         | Your deployed Mastra server URL                          |
+| Variable             | Value                                                                    |
+| -------------------- | ------------------------------------------------------------------------ |
+| `JWT_PRIVATE_KEY`    | Same private key (or generate a new pair for production)                 |
+| `JWKS`               | Matching public key JSON                                                 |
+| `OPENROUTER_API_KEY` | Your production OpenRouter API key                                       |
+| `SITE_URL`           | Your production URL (e.g., `https://myapp.netlify.app`)                  |
+| `MASTRA_URL`         | Your deployed Mastra server URL                                          |
+| `AUTH_RESEND_KEY`    | Resend API key for email verification and password reset                 |
+| `AUTH_EMAIL`         | Sender address, e.g. `Chat Template <noreply@yourdomain.com>` (optional) |
 
 ### 3. Get Your Deploy Key
 
